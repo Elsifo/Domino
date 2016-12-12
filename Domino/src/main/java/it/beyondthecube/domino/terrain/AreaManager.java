@@ -41,7 +41,7 @@ public class AreaManager {
 				owner, pset, isplotclaim, (type == null) ? (AreaType.NONE) : type, tax, saleprice);
 		areas.put(a, c);
 		if (isplotclaim)
-			PoliticalManager.loadClaim(c, l1.getLocation().getExtent().getChunkAtBlock(l1.getLocation().getBlockPosition()).get());
+			PoliticalManager.loadClaim(c, a);
 	}
 
 	public static void newArea(UUID id, Location<World> l1, Location<World> l2, Resident owner, City c, boolean iscreating,
@@ -63,7 +63,7 @@ public class AreaManager {
 		if (type.equals(AreaType.TOWNHALL))
 			PoliticalManager.changeTownHall(a, c, false, iscreating);
 		if (isplotclaim)
-			PoliticalManager.loadClaim(c, l1.getExtent().getChunkAtBlock(l1.getBlockPosition()).get());
+			PoliticalManager.loadClaim(c, a);
 	}
 
 	public static Area getArea(Location<World> l) {

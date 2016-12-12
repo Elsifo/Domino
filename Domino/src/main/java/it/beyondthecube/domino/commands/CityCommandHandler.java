@@ -179,7 +179,7 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.success();
 		}
 		Optional<Resident> or = ResidentManager.getResident(((String) args.getOne("player").get()));
-		if(or.isPresent()) {
+		if(!or.isPresent()) {
 			p.sendMessage((Utility.pluginMessage("Player not found")));
 			return CommandResult.success();
 		}

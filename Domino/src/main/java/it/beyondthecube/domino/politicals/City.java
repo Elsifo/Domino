@@ -22,7 +22,7 @@ public class City {
 	private String name;
 	private Resident mayor;
 	private ArrayList<Resident> assistants;
-	private ArrayList<Chunk> plots;
+	private ArrayList<Area> plots;
 	private PermissionSet pset;
 	private ComLocation spawn;
 	private Area townhall;
@@ -30,7 +30,7 @@ public class City {
 	private ToggleSet toggles;
 
 	protected City(int dbid, String name, ArrayList<Resident> residents, ArrayList<Resident> assistants, Resident mayor,
-			ArrayList<Chunk> plots, PermissionSet pset, ComLocation spawn2, double tax, ToggleSet toggles) {
+			ArrayList<Area> plots, PermissionSet pset, ComLocation spawn2, double tax, ToggleSet toggles) {
 		this.dbid = dbid;
 		this.name = name;
 		this.assistants = (assistants == null) ? new ArrayList<>() : assistants;
@@ -98,15 +98,20 @@ public class City {
 		this.plots.remove(a.getAngle1().getChunk());
 	}
 
-	public boolean ownedChunk(Chunk c) {
-		return plots.contains(c);
+	public boolean ownedChunk(Chunk chunk) {
+		for (Area a : plots) {
+			if (a.collides(new Location<World>(chunk.getWorld(), chunk.getBlockMin()),
+					new Location<World>(chunk.getWorld(), chunk.getBlockMax())))
+				return true;
+		}
+		return false;
 	}
 
 	public ArrayList<Resident> getAssistants() {
 		return assistants;
 	}
 
-	protected void loadClaim(Chunk c) {
+	protected void loadClaim(Area c) {
 		plots.add(c);
 	}
 

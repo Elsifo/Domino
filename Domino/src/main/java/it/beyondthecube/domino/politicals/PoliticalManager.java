@@ -146,7 +146,7 @@ public class PoliticalManager {
 		return null;
 	}
 
-	public static void loadClaim(City c, Chunk chunk) {
+	public static void loadClaim(City c, Area chunk) {
 		c.loadClaim(chunk);
 	}
 
