@@ -230,7 +230,7 @@ public class CityCommandHandler implements CommandExecutor {
 		try {
 			City c = ResidentManager.getCity(r);
 			PoliticalManager.setPermissions(r, c, ((String) args.getOne("type").get()),
-					((String) args.getOne("target").get()), ((String) args.getOne("mode").get()));
+					((String) args.getOne("target").get()), String.valueOf(args.getOne("mode").get()));
 		} catch (InsufficientRankException e) {
 			p.sendMessage((Utility.pluginMessage(e.getMessage())));
 		} catch (ParseException e) {
@@ -422,7 +422,7 @@ public class CityCommandHandler implements CommandExecutor {
 			case "spawn": {
 				double price=0;
 				try {
-					price = (Double) PluginConfig.getValue("domino", "city", "spawn", "price");
+					price = Double.valueOf(PluginConfig.getValue("domino", "city", "spawn", "price").toString());
 				} catch (NumberFormatException | IOException e) {
 					p.sendMessage(Utility.errorMessage("Error reading config file"));
 					return CommandResult.empty();

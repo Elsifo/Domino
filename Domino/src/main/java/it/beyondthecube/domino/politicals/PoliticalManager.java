@@ -25,6 +25,7 @@ import it.beyondthecube.domino.sets.toggle.ToggleSet;
 import it.beyondthecube.domino.terrain.Area;
 import it.beyondthecube.domino.terrain.AreaManager;
 import it.beyondthecube.domino.terrain.AreaManager.ActionType;
+import it.beyondthecube.domino.terrain.AreaManager.PermTarget;
 import it.beyondthecube.domino.terrain.AreaType;
 import it.beyondthecube.domino.terrain.ComLocation;
 
@@ -157,9 +158,15 @@ public class PoliticalManager {
 		} else
 			return false;
 	}
+	
+	private static PermTarget getTarget(City c, Resident r) {
+		if(ResidentManager.getResidents(c).contains(r)) return PermTarget.CITIZEN;
+		if(cities.get(c).equals(cities.get(ResidentManager.getCity(r)))) return PermTarget.ALLY;
+		return PermTarget.ALL;
+	}
 
 	public static boolean canPerformAction(Resident r, City c, ActionType at) {
-		if (c.isMayor(r) || c.isAssistant(r))
+		if (c.isMayor(r) || c.isAssistant(r)) 
 			return true;
 		Perm cperms = null;
 		switch (at) {
@@ -173,15 +180,16 @@ public class PoliticalManager {
 			cperms = c.getPermissionSet().getItemUse();
 			break;
 		}
-		if (!ResidentManager.hasCity(r))
+		switch (getTarget(c, r)) {
+		case ALL:
 			return cperms.getAll();
-		City cres = ResidentManager.getCity(r);
-		if (cres.equals(c) && cperms.getCitizen() == true)
-			return true;
-		if (cities.get(cres).equals(cities.get(c)) && cperms.getAlly() == true)
-			return true;
-		else
-			return cperms.getAll();
+		case ALLY:
+			return cperms.getAlly();
+		case CITIZEN:
+			return cperms.getCitizen();
+		default:
+			return false;
+		}	
 	}
 
 	public static void loadAssistant(Resident res, City c) {

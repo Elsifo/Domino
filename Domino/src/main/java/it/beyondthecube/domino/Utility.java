@@ -2,14 +2,12 @@ package it.beyondthecube.domino;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.UUID;
 
 import org.apache.commons.lang3.text.WordUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.Text.Builder;
 import org.spongepowered.api.text.format.TextColors;
@@ -73,7 +71,7 @@ public class Utility {
 					.build());
 		if (a.hasOwner())
 			s.append(Text.builder("[")
-					.color(TextColors.GOLD).append(Text.builder(getUser(a.getOwner().getPlayer()).getName())
+					.color(TextColors.GOLD).append(Text.builder(a.getOwner().getNick())
 							.color(TextColors.AQUA).append(Text.builder("]").color(TextColors.GOLD).build()).build())
 					.build());
 		if (a.isForSale())
@@ -109,11 +107,6 @@ public class Utility {
 		String tempU = perms[2].substring(8);
 		itemuse = new Perm(tempU.substring(1, tempU.length() - 1));
 		return new PermissionSet(build, interact, itemuse);
-	}
-
-	public static User getUser(UUID u) {
-		return Sponge.getServer().getPlayer(u).get();
-
 	}
 
 	public static void cityInfo(Player p, City c) {
@@ -164,7 +157,7 @@ public class Utility {
 				.append(Text.builder(balance).color(TextColors.GREEN).style(TextStyles.RESET).build()).build());
 		String friends = "";
 		for (Resident res : ResidentManager.getFriendsList(target)) {
-			friends += getUser(res.getPlayer()).getName() + ";";
+			friends += res.getNick() + ";";
 		}
 		p.sendMessage(Text.builder("Friends: ").color(TextColors.GOLD).style(TextStyles.BOLD)
 		.append(Text.builder(friends).color(TextColors.GREEN).style(TextStyles.RESET).build()).build());
@@ -209,7 +202,7 @@ public class Utility {
 			perm = oldpset.getInteract();
 			break;
 		case "itemuse":
-			perm = oldpset.getInteract();
+			perm = oldpset.getItemUse();
 			break;
 		default:
 			throw new ParseException(string);

@@ -33,19 +33,37 @@ public class AreaManager {
 	public enum ActionType {
 		BUILD, INTERACT, ITEMUSE
 	}
-	
-	public static void loadArea(UUID id, ComLocation l1, ComLocation l2, Resident owner, City c,
-			PermissionSet pset, boolean isplotclaim, AreaType type, double tax,
-			double saleprice) throws AreaBoundsException, DatabaseException {
-		Area a = new Area(id, l1, l2,
-				owner, pset, isplotclaim, (type == null) ? (AreaType.NONE) : type, tax, saleprice);
+
+	public enum PermTarget {
+		OWNER, FRIEND, CITIZEN, ALLY, ALL;
+	}
+
+	private static PermTarget getTarget(Area a, Resident r) {
+		if (ResidentManager.getCity(r) == null) return PermTarget.ALL;
+		if (a.getOwner().equals(r))
+			return PermTarget.OWNER;
+		if (ResidentManager.isFriend(a.getOwner(), r))
+			return PermTarget.FRIEND;
+		if (ResidentManager.getCity(r).equals(AreaManager.getCity(a)))
+			return PermTarget.CITIZEN;
+		if (PoliticalManager.getNation(ResidentManager.getCity(r))
+				.equals(PoliticalManager.getNation(AreaManager.getCity(a))))
+			return PermTarget.ALLY;
+		return PermTarget.ALL;
+	}
+
+	public static void loadArea(UUID id, ComLocation l1, ComLocation l2, Resident owner, City c, PermissionSet pset,
+			boolean isplotclaim, AreaType type, double tax, double saleprice)
+			throws AreaBoundsException, DatabaseException {
+		Area a = new Area(id, l1, l2, owner, pset, isplotclaim, (type == null) ? (AreaType.NONE) : type, tax,
+				saleprice);
 		areas.put(a, c);
 		if (isplotclaim)
 			PoliticalManager.loadClaim(c, a);
 	}
 
-	public static void newArea(UUID id, Location<World> l1, Location<World> l2, Resident owner, City c, boolean iscreating,
-			PermissionSet pset, boolean isplotclaim, boolean isnewcity, AreaType type, double tax,
+	public static void newArea(UUID id, Location<World> l1, Location<World> l2, Resident owner, City c,
+			boolean iscreating, PermissionSet pset, boolean isplotclaim, boolean isnewcity, AreaType type, double tax,
 			double saleprice) throws AreaBoundsException, DatabaseException {
 		if (!(isnewcity)) {
 			for (Area a : areas.keySet()) {
@@ -56,9 +74,9 @@ public class AreaManager {
 			}
 		}
 		ComLocation[] angles = DatabaseManager.getInstance().newArea(id, l1, l2, owner, c, pset, isplotclaim,
-					(type == null) ? AreaType.NONE : type, tax);
-		Area a = new Area(id, angles[0], angles[1],
-				owner, pset, isplotclaim, (type == null) ? (AreaType.NONE) : type, tax, saleprice);
+				(type == null) ? AreaType.NONE : type, tax);
+		Area a = new Area(id, angles[0], angles[1], owner, pset, isplotclaim, (type == null) ? (AreaType.NONE) : type,
+				tax, saleprice);
 		areas.put(a, c);
 		if (type.equals(AreaType.TOWNHALL))
 			PoliticalManager.changeTownHall(a, c, false, iscreating);
@@ -118,7 +136,11 @@ public class AreaManager {
 		if (!existsArea(l))
 			return true;
 		Area a = getArea(l);
+		if (areas.get(a).isMayor(r) || areas.get(a).isAssistant(r)) 
+			return true;
 		Perm aperms = null;
+		if (!a.hasOwner())
+			return PoliticalManager.canPerformAction(r, AreaManager.getCity(a), at);
 		switch (at) {
 		case BUILD:
 			aperms = a.getPermissionSet().getBuild();
@@ -130,25 +152,20 @@ public class AreaManager {
 			aperms = a.getPermissionSet().getItemUse();
 			break;
 		}
-		if (!ResidentManager.hasCity(r))
+		switch (getTarget(a, r)) {
+		case OWNER:
+			return aperms.getOwner();
+		case ALL:
 			return aperms.getAll();
-		City c = ResidentManager.getCity(r);
-		if (c.isMayor(r) || c.isAssistant(r))
-			return true;
-		if (a.hasOwner()) {
-			if (a.getOwner().equals(r) && aperms.getOwner() == true)
-				return true;
-			if (ResidentManager.getFriendsList(a.getOwner()).contains(r) && aperms.getFriend())
-				return true;
-			if (ResidentManager.getCity(a.getOwner()).equals(c) && aperms.getCitizen() == true)
-				return true;
-			if (PoliticalManager.getNation(c).equals(PoliticalManager.getNation(AreaManager.getCity(a)))
-					&& aperms.getAlly() == true)
-				return true;
-		} else {
-			return PoliticalManager.canPerformAction(r, areas.get(a), at);
-		}
-		return false;
+		case ALLY:
+			return aperms.getAlly();
+		case CITIZEN:
+			return aperms.getCitizen();
+		case FRIEND:
+			return aperms.getFriend();
+		default:
+			return false;
+		}		
 	}
 
 	public static void setPermissions(Resident r, Location<World> l, String string, String string2, String string3)
@@ -178,8 +195,10 @@ public class AreaManager {
 		Chunk s = world.getChunk(chunk.getX() - 1, 0, chunk.getZ()).get();
 		Chunk w = world.getChunk(chunk.getX(), 0, chunk.getZ() - 1).get();
 		Chunk e = world.getChunk(chunk.getX(), 0, chunk.getZ() + 1).get();
-		Area[] areas = { getArea(new Location<World>(world,n.getBlockMin())), getArea(new Location<World>(world,s.getBlockMin())),
-				getArea(new Location<World>(world,e.getBlockMin())), getArea(new Location<World>(world,w.getBlockMin())) };
+		Area[] areas = { getArea(new Location<World>(world, n.getBlockMin())),
+				getArea(new Location<World>(world, s.getBlockMin())),
+				getArea(new Location<World>(world, e.getBlockMin())),
+				getArea(new Location<World>(world, w.getBlockMin())) };
 		for (int i = 0; i < 4; i++) {
 			if (areas[i] != null) {
 				City o = AreaManager.getCity(areas[i]);

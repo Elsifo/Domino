@@ -103,7 +103,7 @@ public class AreaCommandHandler implements CommandExecutor {
 		try {
 			AreaManager.setPermissions(ResidentManager.getResident(p.getUniqueId()), p.getLocation(),
 					(String) args.getOne("type").get(), (String) args.getOne("target").get(),
-					(String) args.getOne("mode").get());
+					String.valueOf(args.getOne("mode").get()));
 		} catch (InsufficientRankException e) {
 			p.sendMessage((Utility.pluginMessage(e.getMessage())));
 		} catch (ParseException e) {

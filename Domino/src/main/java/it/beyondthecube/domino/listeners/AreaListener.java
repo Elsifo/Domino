@@ -44,7 +44,7 @@ public class AreaListener {
 	}
 
 	private boolean isSwitchableRightClick(Location<World> l) throws NotInteractableException {
-		switch (l.getBlock().getType().getId()) {
+		switch (l.getBlock().getType().getId().substring(10)) {
 		case "acacia_door":
 		case "spruce_door":
 		case "birch_door":
@@ -109,7 +109,7 @@ public class AreaListener {
 			}
 		}
 		try {
-			if (isSwitchableRightClick(l)) {
+			if (isSwitchableRightClick(l)) {				
 				if (!(AreaManager.canPerformAction(ResidentManager.getResident(p.getUniqueId()), l,
 						ActionType.INTERACT))) {
 					e.setCancelled(true);
@@ -117,7 +117,6 @@ public class AreaListener {
 				}
 			}
 		} catch (NotInteractableException e1) {
-			// Nothing to do
 		}
 	}
 
