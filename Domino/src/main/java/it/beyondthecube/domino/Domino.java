@@ -36,7 +36,7 @@ import it.beyondthecube.domino.tasks.TaxesTask;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id = "domino", name = "Domino", version = "0.2alpha2-SPONGE")
+@Plugin(id = "domino", name = "Domino", version = "0.2alpha3-SPONGE")
 public class Domino {
 	private boolean locked;
 	

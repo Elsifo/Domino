@@ -1,5 +1,6 @@
 package it.beyondthecube.domino.residents;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import org.spongepowered.api.Sponge;
@@ -31,7 +32,7 @@ public class CitizenshipRequestManager {
 		requests.remove(added);
 	}
 
-	public static void requestAccepted(Resident added) {
+	public static void requestAccepted(Resident added) throws IOException {
 		requests.get(added).stopTask();
 		City c = requests.get(added).getCity();
 		try {

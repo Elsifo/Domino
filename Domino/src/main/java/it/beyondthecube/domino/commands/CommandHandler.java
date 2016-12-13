@@ -1,5 +1,6 @@
 package it.beyondthecube.domino.commands;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import org.spongepowered.api.Sponge;
@@ -16,7 +17,6 @@ import org.spongepowered.api.text.Text;
 import it.beyondthecube.domino.Domino;
 import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.database.DatabaseManager;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.politicals.City;
 import it.beyondthecube.domino.politicals.Nation;
@@ -29,16 +29,20 @@ public class CommandHandler implements CommandExecutor {
 	private static Domino plugin;
 
 	public CommandHandler(Domino plugin) {
-		CommandSpec nation = CommandSpec.builder().executor(this::executeNation)
+		CommandSpec nation = CommandSpec.builder().executor(this::executeNation).permission("domino.set.nation")
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("city"))),
 					GenericArguments.onlyOne(GenericArguments.string(Text.of("nation")))).build();
-		CommandSpec mayor = CommandSpec.builder().executor(this::executeMayor)
+		CommandSpec mayor = CommandSpec.builder().executor(this::executeMayor).permission("domino.set.mayor")
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("mayor"))),
 					GenericArguments.onlyOne(GenericArguments.string(Text.of("city")))).build();
 		CommandSpec set = CommandSpec.builder().child(mayor, "mayor").child(nation, "nation").build();
+		CommandSpec bonus = CommandSpec.builder().executor(this::executeBonus).permission("domino.give.bonus")
+				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("city"))))
+				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("bonus")))).build();
+		CommandSpec give = CommandSpec.builder().child(bonus, "bonus").build();
 		CommandSpec dom = CommandSpec.builder().executor(this)
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("mode")))).child(set, "set")
-				.build();
+				.child(give, "give").build();
 		Sponge.getCommandManager().register(plugin, dom, "dom");
 	}
 
@@ -46,40 +50,54 @@ public class CommandHandler implements CommandExecutor {
 		if (!(src instanceof Player))
 			return CommandResult.empty();
 		Player p = (Player) src;
-		try {
-			Optional<Resident> or = ResidentManager.getResident((String) args.getOne("mayor").get());
-			if(!or.isPresent()) {
-				p.sendMessage((Utility.pluginMessage("Player not found")));
-				return CommandResult.success();
+		Optional<City> oc = PoliticalManager.getCity((String) args.getOne("city").get());
+		if(oc.isPresent()) {
+			try {
+				City c = oc.get();
+				Optional<Resident> or = ResidentManager.getResident((String) args.getOne("mayor").get());
+				if(!or.isPresent()) {
+					p.sendMessage((Utility.pluginMessage("Player not found")));
+					return CommandResult.success();
+				}
+				Resident r = or.get();
+				PoliticalManager.setMayor(c, r);
+			} catch (DatabaseException e) {
+				p.sendMessage((Utility.errorMessage("ERROR: contact an admin")));
 			}
-			Resident r = or.get();
-			PoliticalManager.setMayor(PoliticalManager.getCity((String) args.getOne("city").get()), r);
-		} catch (CityNotFoundException e) {
+		} else
 			p.sendMessage((Utility.pluginMessage("The city you've specified doesn't exist")));
-		} catch (DatabaseException e) {
-			p.sendMessage((Utility.errorMessage("ERROR: contact an admin")));
-		}
 		return CommandResult.success();
+	}
+	
+	public CommandResult executeBonus(CommandSource src, CommandContext args) throws CommandException {
+		if(!(src instanceof Player)) 
+			return CommandResult.empty();
+		Optional<City> oc = PoliticalManager.getCity((String) args.getOne("city").get());
+		if(oc.isPresent()) 
+			PoliticalManager.addPlotBonus(oc.get(), Integer.parseInt((String) args.getOne("bonus").get()));
+		return CommandResult.success();	
 	}
 
 	public CommandResult executeNation(CommandSource src, CommandContext args) throws CommandException {
 		if (!(src instanceof Player))
 			return CommandResult.empty();
 		Player p = (Player) src;
-		try {
-			City c = PoliticalManager.getCity((String) args.getOne("city").get());
-			Nation n = PoliticalManager.getNation((String) args.getOne("nation").get());
-			if (PoliticalManager.getNation(c).equals(n)) {
-				p.sendMessage((Utility.pluginMessage("This city is alredy under this nation")));
+		Optional<City> oc = PoliticalManager.getCity((String) args.getOne("city").get());
+		if(oc.isPresent()) {
+			try {
+				City c = oc.get();
+				Nation n = PoliticalManager.getNation((String) args.getOne("nation").get());
+				if (PoliticalManager.getNation(c).equals(n)) {
+					p.sendMessage((Utility.pluginMessage("This city is alredy under this nation")));
+				}
+				DatabaseManager.getInstance().setNation(c, n);
+				PoliticalManager.setNation(c, n);
+				p.sendMessage((Utility.pluginMessage("Nation changed")));
+			} catch (DatabaseException ex) {
+				p.sendMessage((Utility.errorMessage("ERROR: contact an admin")));
 			}
-			DatabaseManager.getInstance().setNation(c, n);
-			PoliticalManager.setNation(c, n);
-			p.sendMessage((Utility.pluginMessage("Nation changed")));
-		} catch (CityNotFoundException e) {
+		} else 
 			p.sendMessage((Utility.pluginMessage("The city you've specified doesn't exist")));
-		} catch (DatabaseException ex) {
-			p.sendMessage((Utility.errorMessage("ERROR: contact an admin")));
-		}
 		return CommandResult.success();
 	}
 
@@ -100,7 +118,11 @@ public class CommandHandler implements CommandExecutor {
 			}
 		case "accept": {
 			if (CitizenshipRequestManager.hasRequest(r))
-				CitizenshipRequestManager.requestAccepted(r);
+				try {
+					CitizenshipRequestManager.requestAccepted(r);
+				} catch (IOException e) {
+					p.sendMessage(Utility.errorMessage("Cound not give bonus plots. Contact an administrator"));
+				}
 			else
 				p.sendMessage((Utility.pluginMessage("No invitation to accept")));
 			return CommandResult.success();

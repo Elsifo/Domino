@@ -31,7 +31,7 @@ import it.beyondthecube.domino.terrain.AreaType;
 import it.beyondthecube.domino.terrain.ComLocation;
 
 public class Utility {
-	private static String decor = "          ~°~°~°~°~°";
+	private static String decor = "      ~°~°~°~°~°";
 	private static String roced = (new StringBuilder(decor)).reverse().toString();
 
 	public static void sendConsole(String msg) {
@@ -110,8 +110,10 @@ public class Utility {
 	}
 
 	public static void cityInfo(Player p, City c) {
-		p.sendMessage(Text.builder(decor).color(TextColors.GOLD).append(Text.builder(c.getName()).color(TextColors.GREEN)
-				.style(TextStyles.BOLD).append(Text.builder(roced).color(TextColors.GOLD).style(TextStyles.RESET).build()).build()).build());
+		p.sendMessage(Text.builder(decor).color(TextColors.GOLD)
+				.append(Text.builder("" + c.getName() + "[" + c.getClaimedPlots() + "/" + c.getPlotNumber() + "]")
+				.color(TextColors.GREEN).style(TextStyles.BOLD)
+				.append(Text.builder(roced).color(TextColors.GOLD).style(TextStyles.RESET).build()).build()).build());
 		p.sendMessage(Text.builder("Mayor: ").color(TextColors.GOLD).style(TextStyles.BOLD)
 				.append(Text.builder(c.getMayor().getNick()).color(TextColors.GREEN).build()).build());
 		Builder asst = Text.builder("Assistants: ").color(TextColors.GOLD).style(TextStyles.BOLD);
@@ -236,9 +238,12 @@ public class Utility {
 			return (block > block3) && (block < block2);
 	}
 
-	public static String cityChatMessage(Player sender, String msg) {
-		return "[" + TextColors.GREEN + "CC" + TextColors.WHITE + "] " + TextColors.GREEN + sender.getName() + ": "
-				+ msg;
+	public static Text cityChatMessage(Player sender, String msg) {
+		return Text.builder("[").append(Text.builder("CC").color(TextColors.GREEN)
+				.append(Text.builder("]").color(TextColors.WHITE)
+				.append(Text.builder(" " + sender.getName()).color(TextColors.GREEN)
+				.append(Text.builder(": ").color(TextColors.WHITE)
+				.append(Text.builder(msg).color(TextColors.GREEN).build()).build()).build()).build()).build()).build();
 	}
 
 	public static void nationInfo(Nation n, Player p) {

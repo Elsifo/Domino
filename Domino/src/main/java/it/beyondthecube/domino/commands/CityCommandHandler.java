@@ -394,12 +394,12 @@ public class CityCommandHandler implements CommandExecutor {
 		String msg = "";
 		for (Object o : cobj)
 			msg += (String) o + " ";
-		String m = Utility.cityChatMessage(p, msg);
+		Text m = Utility.cityChatMessage(p, msg);
 		for (Player rec : Sponge.getServer().getOnlinePlayers()) {
 			Resident rs = ResidentManager.getResident(rec.getUniqueId());
 			if (ResidentManager.hasCity(rs)) {
 				if (ResidentManager.getCity(rs).equals(c)) {
-					rec.sendMessage(Text.of(m));
+					rec.sendMessage(m);
 				}
 			}
 		}
@@ -412,6 +412,7 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		City c = ResidentManager.getCity(r);
 		Optional<String> os = args.getOne("mode");
 		if (os.isPresent()) {
 			switch (os.get()) {
@@ -428,7 +429,6 @@ public class CityCommandHandler implements CommandExecutor {
 					return CommandResult.empty();
 				}
 				if (EconomyLinker.canAfford(r.getPlayer(), price)) {
-					City c = ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId()));
 					ComLocation spawn = c.getSpawn();
 					if (spawn == null)
 						p.sendMessage((Utility.pluginMessage("Your city has no spawn point!")));
@@ -445,11 +445,15 @@ public class CityCommandHandler implements CommandExecutor {
 				return CommandResult.success();
 			}
 			case "claim": {
+				if(c.getPlotNumber() == c.getClaimedPlots()) {
+					p.sendMessage(Utility.pluginMessage("You've reached city plot limit"));
+					return CommandResult.success();
+				}
 				try {
 					p.sendMessage((Utility.pluginMessage("Processing plot claim")));
 					Chunk k = p.getWorld().getChunkAtBlock(p.getLocation().getBlockPosition()).get();
-					if (!(PoliticalManager.plotAlreadyClaimed(k, ResidentManager.getCity(r)))) {
-						if (PoliticalManager.claim(ResidentManager.getCity(r), k, r))
+					if (!(PoliticalManager.plotAlreadyClaimed(k, c))) {
+						if (PoliticalManager.claim(c, k, r))
 							p.sendMessage((Utility.pluginMessage("Plot claimed")));
 						else
 							p.sendMessage((Utility
@@ -506,11 +510,11 @@ public class CityCommandHandler implements CommandExecutor {
 				return CommandResult.success();
 			}
 			default: {
-				try {
-					City c = PoliticalManager.getCity(os.get());
-					Utility.cityInfo(p, c);
+				Optional<City> ct = PoliticalManager.getCity(os.get());
+				if(ct.isPresent()) {
+					Utility.cityInfo(p, ct.get());
 					return CommandResult.success();
-				} catch (CityNotFoundException e) {
+				} else  {
 					p.sendMessage((Utility.pluginMessage("City not found")));
 					return CommandResult.success();
 				}
@@ -525,20 +529,4 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.success();
 		}
 	}
-
-	/*
-	 * 
-	 * 
-	 * @SuppressWarnings("deprecation") public boolean comm(CommandSender
-	 * sender, Command cmd, String label, String[] args) { if (sender instanceof
-	 * Player) { Player p = (Player) sender; Resident r =
-	 * ResidentManager.getResident(p.getUniqueId()); if
-	 * (cmd.getName().equals("cc")) else if (cmd.getName().equals("city")) { if
-	 * (!(ResidentManager.hasCity(r))) { if (!(args[0].equals("help")) &&
-	 * !(args[0].equals("new")) && !(PoliticalManager.isValidCity(args[0]))) {
-	 * p.sendMessage(Text.of("You don't belong to a city")); return
-	 * CommandResult.success(); } }
-	 * 
-	 * } } } return false; }
-	 */
 }

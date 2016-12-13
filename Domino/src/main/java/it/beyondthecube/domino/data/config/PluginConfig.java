@@ -12,19 +12,25 @@ public class PluginConfig {
 	private static ConfigurationLoader<CommentedConfigurationNode> configManager;
 	private static ConfigurationNode config;
 
+	public static void checkConfigValues() {
+		if(config.getNode("database","address").isVirtual()) config.getNode("database","address").setValue("localhost");
+    	if(config.getNode("database","user").isVirtual()) config.getNode("database","user").setValue("user");
+    	if(config.getNode("database","pass").isVirtual()) config.getNode("database","pass").setValue("pass");
+    	if(config.getNode("database","alias").isVirtual()) config.getNode("database","alias").setValue("alias");
+    	if(config.getNode("database","name").isVirtual()) config.getNode("database","name").setValue("name");
+    	if(config.getNode("database","version").isVirtual()) config.getNode("database","version").setValue("4");
+    	if(config.getNode("domino","lasttaxcollection").isVirtual()) config.getNode("domino","lasttaxcollection").setValue("0");
+    	if(config.getNode("domino","city","spawn","price").isVirtual()) config.getNode("domino","city","spawn","price").setValue("30");
+    	if(config.getNode("domino","city","citizenbonusplots").isVirtual()) config.getNode("domino","city","citizenbonusplots").setValue("10");
+    	if(config.getNode("domino","city","baseplots").isVirtual()) config.getNode("domino","city","baseplots").setValue("50");
+	}
+	
 	public static ConfigResult init(File defaultConf, ConfigurationLoader<CommentedConfigurationNode> cfg) {
 		configManager=cfg; 
 		try {		 
 			config = cfg.load();
-	        if (!defaultConf.exists()) {
-	        	config.getNode("database","address").setValue("localhost");
-	        	config.getNode("database","user").setValue("user");
-	        	config.getNode("database","pass").setValue("pass");
-	        	config.getNode("database","alias").setValue("alias");
-	        	config.getNode("database","name").setValue("name");
-	        	config.getNode("database","version").setValue("4");
-	        	config.getNode("domino","lasttaxcollection").setValue("0");
-	        	config.getNode("domino","city","spawn","price").setValue("30");
+			checkConfigValues();
+	        if (!defaultConf.exists()) {	        	
 	        	saveConfig();
 	        	return ConfigResult.CREATE;
 	        }

@@ -28,9 +28,10 @@ public class City {
 	private Area townhall;
 	private double tax;
 	private ToggleSet toggles;
+	private int plotnum;
 
 	protected City(int dbid, String name, ArrayList<Resident> residents, ArrayList<Resident> assistants, Resident mayor,
-			ArrayList<Area> plots, PermissionSet pset, ComLocation spawn2, double tax, ToggleSet toggles) {
+			ArrayList<Area> plots, PermissionSet pset, ComLocation spawn2, double tax, ToggleSet toggles, int plotnum) {
 		this.dbid = dbid;
 		this.name = name;
 		this.assistants = (assistants == null) ? new ArrayList<>() : assistants;
@@ -43,6 +44,7 @@ public class City {
 		this.spawn = spawn2;
 		this.tax = tax;
 		this.toggles = toggles;
+		this.plotnum = plotnum;
 	}
 
 	public int getID() {
@@ -79,6 +81,10 @@ public class City {
 
 	public Resident getMayor() {
 		return mayor;
+	}
+	
+	public int getPlotNumber() {
+		return plotnum;
 	}
 
 	protected void claim(Chunk k, boolean isfirstclaim) throws DatabaseException {
@@ -173,5 +179,13 @@ public class City {
 
 	public void toggleMobs() {
 		toggles.toggleMobs();
+	}
+
+	public int getClaimedPlots() {
+		return plots.size();
+	}
+
+	public void addPlotBonus(int bonus) {
+		this.plotnum += bonus;		
 	}
 }

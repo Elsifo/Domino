@@ -28,6 +28,7 @@ import it.beyondthecube.domino.terrain.AreaManager.ActionType;
 import it.beyondthecube.domino.terrain.AreaManager.PermTarget;
 import it.beyondthecube.domino.terrain.AreaType;
 import it.beyondthecube.domino.terrain.ComLocation;
+import java.util.Optional;
 
 public class PoliticalManager {
 	private static ArrayList<Nation> nations = new ArrayList<>();
@@ -39,7 +40,7 @@ public class PoliticalManager {
 		int iddb;
 		try {
 			iddb = DatabaseManager.getInstance().createCity(name, mayor, n, iscapital, spawn);
-			City c = new City(iddb, name, null, null, mayor, null, new PermissionSet(), new ComLocation(iddb,spawn), tax, new ToggleSet());
+			City c = new City(iddb, name, null, null, mayor, null, new PermissionSet(), new ComLocation(iddb,spawn), tax, new ToggleSet(), 60);
 			DatabaseManager.getInstance().addResident(mayor, c);
 			ResidentManager.setCity(mayor, c);
 			c.claim(Sponge.getServer().getPlayer(mayor.getPlayer()).get().getLocation().getExtent()
@@ -55,8 +56,8 @@ public class PoliticalManager {
 	}
 
 	public static City loadCity(int dbid, String name, Resident mayor, Nation n, PermissionSet pset, ComLocation spawn,
-			double tax, ToggleSet toggles) {
-		City c = new City(dbid, name, null, null, mayor, null, pset, spawn, tax, toggles);
+			double tax, ToggleSet toggles, int plotnum) {
+		City c = new City(dbid, name, null, null, mayor, null, pset, spawn, tax, toggles, plotnum);
 		cities.put(c, n);
 		search.put(name, c);
 		return c;
@@ -95,11 +96,8 @@ public class PoliticalManager {
 		return s;
 	}
 
-	public static City getCity(String string) throws CityNotFoundException {
-		City c = search.get(string);
-		if (c == null)
-			throw new CityNotFoundException();
-		return c;
+	public static Optional<City> getCity(String string) {
+		return Optional.of(search.get(string));
 	}
 
 	public static Nation getNation(City c) {
@@ -265,5 +263,9 @@ public class PoliticalManager {
 	public static void setTax(Nation n, double am) throws DatabaseException {
 		DatabaseManager.getInstance().setTax(n, am);
 		n.setTax(am);
+	}
+
+	public static void addPlotBonus(City city, int bonus) {
+		city.addPlotBonus(bonus);		
 	}
 }

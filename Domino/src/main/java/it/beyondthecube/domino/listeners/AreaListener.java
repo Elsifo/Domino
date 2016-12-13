@@ -15,7 +15,6 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.Utility;
-import it.beyondthecube.domino.exceptions.NotInteractableException;
 import it.beyondthecube.domino.residents.ResidentManager;
 import it.beyondthecube.domino.terrain.AreaManager;
 import it.beyondthecube.domino.terrain.AreaManager.ActionType;
@@ -43,7 +42,7 @@ public class AreaListener {
 		}
 	}
 
-	private boolean isSwitchableRightClick(Location<World> l) throws NotInteractableException {
+	private boolean isSwitchableRightClick(Location<World> l) {
 		switch (l.getBlock().getType().getId().substring(10)) {
 		case "acacia_door":
 		case "spruce_door":
@@ -80,11 +79,11 @@ public class AreaListener {
 		case "jukebox":
 			return true;
 		default:
-			throw new NotInteractableException();
+			return false;
 		}
 	}
 
-	private boolean isSwitchableRedstone(BlockState b) throws NotInteractableException {
+	private boolean isSwitchableRedstone(BlockState b) {
 		switch (b.getType().getId()) {
 		case "TRIPWIRE":
 		case "GOLD_PLATE":
@@ -93,7 +92,7 @@ public class AreaListener {
 		case "STONE_PLATE":
 			return true;
 		default:
-			throw new NotInteractableException();
+			return false;
 		}
 	}
 
@@ -108,16 +107,12 @@ public class AreaListener {
 				p.sendMessage(Text.of(Utility.pluginMessage("You can't use this item here")));
 			}
 		}
-		try {
-			if (isSwitchableRightClick(l)) {				
-				if (!(AreaManager.canPerformAction(ResidentManager.getResident(p.getUniqueId()), l,
-						ActionType.INTERACT))) {
-					e.setCancelled(true);
-					p.sendMessage(Text.of(Utility.pluginMessage("You can't interact with this block")));
-				}
+		if (isSwitchableRightClick(l)) {				
+			if (!(AreaManager.canPerformAction(ResidentManager.getResident(p.getUniqueId()), l,ActionType.INTERACT))) {
+				e.setCancelled(true);
+				p.sendMessage(Text.of(Utility.pluginMessage("You can't interact with this block")));
 			}
-		} catch (NotInteractableException e1) {
-		}
+		} 
 	}
 
 	private boolean isUsable(ItemStack itemInHand) {

@@ -13,7 +13,7 @@ import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.message.MessageEvent.MessageFormatter;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.Text.Builder;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -102,14 +102,18 @@ public class PlayerListener {
 	@Listener
 	public void onChatMessage(MessageChannelEvent.Chat e, @First Player p) {
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		MessageFormatter mf = e.getFormatter();
-		City c = null;
-		Builder prep = Text.builder();
 		if (ResidentManager.isCitizen(r)) {
+		MessageFormatter mf = e.getFormatter();
+			City c = null;
+			
 			c = ResidentManager.getCity(r);
 			Nation n = PoliticalManager.getNation(c);
-			prep.append(Text.of("[&d" + n.getName() + "&f|&2" + c.getName() + "&f]")).append(mf.getHeader().toText());
-			mf.setHeader(prep.build());
+			Text msg = Text.builder("[").append(Text.builder(n.getName()).color(TextColors.LIGHT_PURPLE)
+					.append(Text.builder("|").color(TextColors.WHITE)
+					.append(Text.builder(c.getName()).color(TextColors.GREEN)
+					.append(Text.builder("]").color(TextColors.WHITE)
+					.append(mf.getHeader().toText()).build()).build()).build()).build()).build();
+			mf.setHeader(msg);
 		}
 	}
 }

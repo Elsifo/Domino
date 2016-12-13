@@ -1,5 +1,6 @@
 package it.beyondthecube.domino.residents;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
+import it.beyondthecube.domino.data.config.PluginConfig;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
@@ -60,8 +62,9 @@ public class ResidentManager {
 		residents.put(added, c);
 	}
 
-	public static void addToCity(Resident adder, Resident added, City c) {
+	public static void addToCity(Resident adder, Resident added, City c) throws IOException {
 		residents.put(added, c);
+		c.addPlotBonus(Integer.parseInt((String) PluginConfig.getValue("domino","city","citizenbonusplot")));
 	}
 
 	public static void removeResident(Resident remover, Resident removed, City c)

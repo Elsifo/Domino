@@ -61,52 +61,7 @@ public class DatabaseManager {
 	}
 	
 	public void attemptUpdate(int vold) throws DatabaseException {
-		switch (vold) {
-		case 1: {
-			return;
-		}
-		case 2: {
-			SQLQuery q = new SQLQuery(
-					"CREATE TABLE £.`friend`(`id` int(11) NOT NULL AUTO_INCREMENT, `resident` varchar(36) NOT NULL, `friend` varchar(36) NOT NULL, PRIMARY KEY (`id`), KEY `fkresfriend` (`resident`), KEY `fkfriend` (`friend`), CONSTRAINT `fkfriend` FOREIGN KEY (`friend`) REFERENCES £.`resident` (`idresident`) ON DELETE NO ACTION ON UPDATE CASCADE, CONSTRAINT `fkresfriend` FOREIGN KEY (`resident`) REFERENCES £.`resident`(`idresident`) ON DELETE NO ACTION ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8",
-					null, msqlc);
-			try {
-				q.excecuteUpdate();
-			} catch (SQLException e) {
-				throw new DatabaseException(q, e, "SQL Error");
-			}
-			return;
-		}
-		case 3: {
-			SQLQuery q = new SQLQuery(
-					"ALTER TABLE £.area ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'NONE' AFTER perms;", null, msqlc);
-			try {
-				q.excecuteUpdate();
-				q = new SQLQuery("ALTER TABLE £.city ADD COLUMN spawn INT DEFAULT NULL", null, msqlc);
-				q.excecuteUpdate();
-				q = new SQLQuery(
-						"ALTER TABLE £.city ADD CONSTRAINT fkspawn FOREIGN KEY(spawn) REFERENCES £.location(idlocation) on update cascade on delete no action",
-						null, msqlc);
-				q.excecuteUpdate();
-			} catch (SQLException e) {
-				throw new DatabaseException(q, e, "SQL Error");
-			}
-			return;
-		}
-		case 4: {
-			SQLQuery q = new SQLQuery("ALTER TABLE £.city CHANGE COLUMN balance tax DOUBLE NOT NULL DEFAULT 0", null,
-					msqlc);
-			try {
-				q.excecuteUpdate();
-				q = new SQLQuery("ALTER TABLE £.nation CHANGE COLUMN balance tax DOUBLE NOT NULL DEFAULT 0", null,
-						msqlc);
-				q.excecuteUpdate();
-				q = new SQLQuery("ALTER TABLE £.area ADD COLUMN tax DOUBLE NOT NULL DEFAULT 0", null, msqlc);
-				q.excecuteUpdate();
-			} catch (SQLException e) {
-				throw new DatabaseException(q, e, "SQL Error");
-			}
-		}
-		}
+		//TODO
 	}
 
 	public int createCity(String name, Resident mayor, Nation n, boolean iscapital, Location<World> spawn)
@@ -123,15 +78,11 @@ public class DatabaseManager {
 			q = new SQLQuery("insert into £.city (name,mayor,nation,tax,perms,spawn) values(?,?,?,?,?,?);", params,
 					msqlc);
 			r = q.excecuteUpdate();
-			if (r.first()) {
-				int id = r.getInt(1);
-				String[] params2 = { String.valueOf(n.getID()), String.valueOf(id), String.valueOf(iscapital ? 1 : 0) };
-				q = new SQLQuery("insert into £.citynation(fknation,fkcity,iscapital) values(?,?,?);", params2, msqlc);
-				q.excecuteUpdate();
-				return id;
-			} else {
-				throw new CityNotFoundException(null);
-			}
+			int id = r.getInt(1);
+			String[] params2 = { String.valueOf(n.getID()), String.valueOf(id), String.valueOf(iscapital ? 1 : 0) };
+			q = new SQLQuery("insert into £.citynation(fknation,fkcity,iscapital) values(?,?,?);", params2, msqlc);
+			q.excecuteUpdate();
+			return id;
 		} catch (SQLException e) {
 			throw new DatabaseException(q, e, "Syntax error");
 		}
@@ -211,7 +162,7 @@ public class DatabaseManager {
 		SQLQuery q = null;
 		try {
 			q = new SQLQuery(
-					"select idcity,c.name,mayor,c.tax,idnation,iscapital,perms,spawn,c.toggles from (£.city c join £.citynation cn on c.idcity=cn.fkcity) join £.nation n on n.idnation=cn.fknation;",
+					"select idcity,c.name,mayor,c.tax,idnation,iscapital,perms,spawn,c.toggles,c.plotnum from (£.city c join £.citynation cn on c.idcity=cn.fkcity) join £.nation n on n.idnation=cn.fknation;",
 					null, msqlc);
 			ResultSet r = q.excecuteQuery();
 			if (r.first()) {
@@ -221,7 +172,6 @@ public class DatabaseManager {
 					ResultSet rspawn = q.excecuteQuery();
 					Location<World> spawn = null;
 					if (rspawn.first()) {
-						Utility.sendConsole("Attempting to load spawn for world: "+rspawn.getString("world"));
 						spawn = new Location<World>(Sponge.getServer().getWorld(rspawn.getString(4)).get(),
 								rspawn.getDouble(1), rspawn.getDouble(2), rspawn.getDouble(3));
 					} else
@@ -232,7 +182,7 @@ public class DatabaseManager {
 					City c = PoliticalManager.loadCity(r.getInt(1), r.getString(2),
 							ResidentManager.getResident(UUID.fromString(r.getString(3))), n, pset,
 							(spawn == null) ? null : (new ComLocation(rspawn.getInt(1), spawn)), r.getDouble(4),
-							new ToggleSet(r.getString(9)));
+							new ToggleSet(r.getString(9)),r.getInt(10));
 					if (n != null) {
 						if (r.getBoolean(6))
 							n.setCapital(c);
