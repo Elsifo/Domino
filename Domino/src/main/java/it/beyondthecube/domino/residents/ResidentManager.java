@@ -67,11 +67,8 @@ public class ResidentManager {
 		c.addPlotBonus(Integer.parseInt((String) PluginConfig.getValue("domino","city","citizenbonusplot")));
 	}
 
-	public static void removeResident(Resident remover, Resident removed, City c)
-			throws DatabaseException, CityNotFoundException, InsufficientRankException {
-		City crer = residents.get(remover);
-		if (crer == null)
-			throw new CityNotFoundException();
+	public static void removeResident(Resident remover, Resident removed, City crer)
+			throws DatabaseException, InsufficientRankException {
 		if (crer.isMayor(remover) || crer.isAssistant(remover) || remover.equals(removed)) {
 			City cred = residents.get(removed);
 			if (crer.equals(cred)) {
@@ -88,8 +85,8 @@ public class ResidentManager {
 		return r.hasSelections();
 	}
 
-	public static City getCity(Resident added) {
-		return residents.get(added);
+	public static Optional<City> getCity(Resident added) {
+		return Optional.of(residents.get(added));
 	}
 
 	public static void setSelection1(Player p, Location<World> location) {

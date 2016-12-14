@@ -24,7 +24,6 @@ import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
 import it.beyondthecube.domino.data.config.PluginConfig;
 import it.beyondthecube.domino.data.database.DatabaseManager;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
 import it.beyondthecube.domino.exceptions.ParseException;
@@ -112,8 +111,14 @@ public class CityCommandHandler implements CommandExecutor {
 		if (!(src instanceof Player))
 			return CommandResult.empty();
 		Player p = (Player) src;
+		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
-			City c = ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId()));
 			String toggle = (String) args.getOne("toggle").get();
 			switch (toggle) {
 			case "fire":
@@ -154,7 +159,7 @@ public class CityCommandHandler implements CommandExecutor {
 			Resident may = my.get();
 			if (ResidentManager.hasCity(may))
 				p.sendMessage((Utility.pluginMessage(
-						may.getNick() + " is still a citizen of " + ResidentManager.getCity(may).getName())));
+						may.getNick() + " is still a citizen of " + ResidentManager.getCity(may).get().getName())));
 			else {
 				try {
 					String name = (String) args.getOne("name").get();
@@ -173,7 +178,12 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		City c = ResidentManager.getCity(r);
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		if (!(c.isAssistant(r) || c.isMayor(r))) {
 			p.sendMessage((Utility.pluginMessage("Insufficient rank")));
 			return CommandResult.success();
@@ -201,6 +211,11 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident remover = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(remover);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
 		Optional<Resident> or = ResidentManager.getResident((String) args.getOne("player").get());
 		if(or.isPresent()) {
 			p.sendMessage((Utility.pluginMessage("Player not found")));
@@ -208,13 +223,10 @@ public class CityCommandHandler implements CommandExecutor {
 		}
 		Resident removed = or.get();
 		try {
-			ResidentManager.removeResident(remover, removed, ResidentManager.getCity(remover));
+			ResidentManager.removeResident(remover, removed, oc.get());
 			return CommandResult.success();
 		} catch (InsufficientRankException e) {
 			p.sendMessage((Utility.pluginMessage("Can't perform this command" + e.getMessage())));
-			return CommandResult.success();
-		} catch (CityNotFoundException e) {
-			p.sendMessage((Utility.pluginMessage("You don't belong to any city")));
 			return CommandResult.success();
 		} catch (DatabaseException e) {
 			p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
@@ -227,8 +239,13 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
-			City c = ResidentManager.getCity(r);
 			PoliticalManager.setPermissions(r, c, ((String) args.getOne("type").get()),
 					((String) args.getOne("target").get()), String.valueOf(args.getOne("mode").get()));
 		} catch (InsufficientRankException e) {
@@ -246,9 +263,14 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
 			double amount = Double.parseDouble((String) args.getOne("amount").get());
-			City c = ResidentManager.getCity(r);
 			if (c.isAssistant(r) || c.isMayor(r)) {
 				PoliticalManager.setTax(c, amount);
 				p.sendMessage((Utility.pluginMessage(
@@ -268,9 +290,13 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
-			City c = ResidentManager.getCity(r);
 			if (c.isMayor(r)) {
 				Optional<Resident> my = ResidentManager.getResident((String) args.getOne("mayor").get());
 				if(!my.isPresent()) {
@@ -279,7 +305,7 @@ public class CityCommandHandler implements CommandExecutor {
 				}
 				Resident mayor = my.get();
 				if (!ResidentManager.getCity(mayor).equals(c)) {
-					p.sendMessage((Utility.pluginMessage("You can only set a citizen of yours as mayor")));
+					p.sendMessage((Utility.pluginMessage("You can only set your citizens as mayor")));
 					return CommandResult.success();
 				}
 				PoliticalManager.setMayor(c, mayor);
@@ -300,6 +326,11 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
 		Optional<Resident> ass = ResidentManager.getResident((String)args.getOne("player").get());
 		if(!ass.isPresent()) {
 			p.sendMessage((Utility.pluginMessage("Player not found")));
@@ -308,8 +339,6 @@ public class CityCommandHandler implements CommandExecutor {
 			PoliticalManager.addAssistant(r,ass.get());
 		} catch (InsufficientRankException e) {
 			p.sendMessage((Utility.pluginMessage("Insufficient rank")));
-		} catch (CityNotFoundException e) {
-			p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
 		} catch (DatabaseException e) {
 			p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
 		}
@@ -321,21 +350,22 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		Optional<Resident> rm = ResidentManager.getResident((String) args.getOne("mode").get());
+		Optional<Resident> rm = ResidentManager.getResident((String) args.getOne("player").get());
 		if(!(rm.isPresent())) {
 			p.sendMessage((Utility.pluginMessage("Player not found")));
+			return CommandResult.success();
 		}
 		Resident removed = rm.get();
 		try {
-			PoliticalManager.removeAssistant(r, removed);
+			if(!PoliticalManager.removeAssistant(r, removed)) {
+				p.sendMessage(Utility.pluginMessage("Can't execute this command"));
+			}
 			p.sendMessage((Utility.pluginMessage(removed.getNick() + " correctly removed from assistants")));
 			Optional<Player> op = Sponge.getServer().getPlayer(removed.getPlayer());
 			if (op.isPresent())
 				op.get().sendMessage((Utility.pluginMessage("You've been removed from assistants")));
 		} catch (InsufficientRankException e) {
 			p.sendMessage((Utility.pluginMessage("Insufficient rank")));
-		} catch (CityNotFoundException e) {
-			p.sendMessage((Utility.pluginMessage("You don't belong to any city")));
 		} catch (DatabaseException e) {
 			p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
 		}
@@ -347,14 +377,20 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
 			Double d = Double.valueOf((String) args.getOne("amount").get());
 			if (EconomyLinker.canAfford(r.getPlayer(), d)) {
-				EconomyLinker.deposit(ResidentManager.getCity(r), d);
+				EconomyLinker.deposit(c, d);
 				EconomyLinker.withdrawPlayer(r.getPlayer(), d);
 				p.sendMessage((Utility.pluginMessage("You've deposited " + d + " into your town bank")));
 			} else
-				p.sendMessage((Utility.pluginMessage("You can't deposit this much.")));
+				p.sendMessage((Utility.pluginMessage("You can't deposit this much")));
 		} catch (NumberFormatException e) {
 			p.sendMessage((Utility.pluginMessage("Not a valid amount")));
 		}
@@ -366,11 +402,16 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		City c = ResidentManager.getCity(r);
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		if (c.isAssistant(r) || c.isMayor(r)) {
 			Double d = Double.valueOf((String) args.getOne("amount").get());
 			if (EconomyLinker.canBankAfford(String.valueOf(c.getID()), d)) {
-				EconomyLinker.withdraw(ResidentManager.getCity(r), d);
+				EconomyLinker.withdraw(c, d);
 				p.sendMessage((Utility.pluginMessage("You've withdrawn " + d + " from your town bank")));
 			} else
 				p.sendMessage((Utility.pluginMessage("Your town doesn't have that much money")));
@@ -385,11 +426,12 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		if (!ResidentManager.hasCity(r)) {
-			p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any town"));
 			return CommandResult.success();
 		}
-		City c = ResidentManager.getCity(r);
+		City c = oc.get();
 		Collection<Object> cobj = args.getAll("message");
 		String msg = "";
 		for (Object o : cobj)
@@ -398,7 +440,7 @@ public class CityCommandHandler implements CommandExecutor {
 		for (Player rec : Sponge.getServer().getOnlinePlayers()) {
 			Resident rs = ResidentManager.getResident(rec.getUniqueId());
 			if (ResidentManager.hasCity(rs)) {
-				if (ResidentManager.getCity(rs).equals(c)) {
+				if (ResidentManager.getCity(rs).get().equals(c)) {
 					rec.sendMessage(m);
 				}
 			}
@@ -412,9 +454,14 @@ public class CityCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		City c = ResidentManager.getCity(r);
+		Optional<City> oc = ResidentManager.getCity(r);
 		Optional<String> os = args.getOne("mode");
 		if (os.isPresent()) {
+			if(!oc.isPresent()) {
+				p.sendMessage(Utility.pluginMessage("Not part of any town"));
+				return CommandResult.success();
+			}
+			City c = oc.get();
 			switch (os.get()) {
 			case "help": {
 				showHelp(p);
@@ -475,8 +522,6 @@ public class CityCommandHandler implements CommandExecutor {
 					PoliticalManager.unclaim(r, p.getLocation());
 				} catch (InsufficientRankException e) {
 					p.sendMessage((Utility.pluginMessage("You can't perform this command")));
-				} catch (CityNotFoundException e) {
-					p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
 				} catch (DatabaseException e) {
 					p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
 				}
@@ -492,16 +537,13 @@ public class CityCommandHandler implements CommandExecutor {
 			}
 			case "leave": {
 				try {
-					Resident leaver = ResidentManager.getResident(p.getUniqueId());
-					if (ResidentManager.getCity(leaver).isMayor(leaver)) {
+					if (c.isMayor(r)) {
 						p.sendMessage((Utility.pluginMessage("You can't leave the town you're mayor of!")));
 						return CommandResult.success();
 					}
-					ResidentManager.removeResident(leaver, leaver, ResidentManager.getCity(leaver));
-					Sponge.getServer().getPlayer(leaver.getPlayer()).get()
+					ResidentManager.removeResident(r, r, c);
+					Sponge.getServer().getPlayer(r.getPlayer()).get()
 							.sendMessage((Utility.pluginMessage("You left your town")));
-				} catch (CityNotFoundException e) {
-					p.sendMessage((Utility.pluginMessage("You are already free")));
 				} catch (DatabaseException e) {
 					p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
 				} catch (InsufficientRankException e) {
@@ -522,10 +564,10 @@ public class CityCommandHandler implements CommandExecutor {
 			}
 		} else {
 			if (!ResidentManager.hasCity(r)) {
-				p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
+				p.sendMessage((Utility.pluginMessage("Not part of any town")));
 				return CommandResult.success();
 			}
-			Utility.cityInfo(p, ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId())));
+			Utility.cityInfo(p, oc.get());
 			return CommandResult.success();
 		}
 	}

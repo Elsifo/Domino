@@ -6,6 +6,7 @@ import java.util.Calendar;
 import org.apache.commons.lang3.text.WordUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -152,7 +153,7 @@ public class Utility {
 				.build());		
 		Builder s = Text.builder("City: ").color(TextColors.GOLD).style(TextStyles.BOLD);
 		if (ResidentManager.hasCity(target))
-			s.append(Text.builder(ResidentManager.getCity(target).getName()).color(TextColors.GREEN).style(TextStyles.RESET).build());
+			s.append(Text.builder(ResidentManager.getCity(target).get().getName()).color(TextColors.GREEN).style(TextStyles.RESET).build());
 		p.sendMessage(s.build());
 		String balance = String.valueOf(EconomyLinker.getBalance(target));
 		p.sendMessage(Text.builder("Balance: ").color(TextColors.GOLD).style(TextStyles.BOLD)
@@ -284,8 +285,11 @@ public class Utility {
 		}
 	}
 
-	public static String nationChatMessage(Player sender, String msg) {
-		return "[" + TextColors.LIGHT_PURPLE + "NC" + TextColors.WHITE + "] " + TextColors.LIGHT_PURPLE
-				+ sender.getName() + ": " + msg;
+	public static Text nationChatMessage(Player sender, String msg) {
+		return Text.builder("[").append(Text.builder("NC").color(TextColors.LIGHT_PURPLE)
+				.append(Text.builder("] ").color(TextColors.WHITE )
+				.append(Text.builder(sender.getName()).color(TextColors.LIGHT_PURPLE)
+				.append(Text.builder(": ").color(TextColors.WHITE)
+				.append(Text.builder(msg).color(TextColors.LIGHT_PURPLE).build()).build()).build()).build()).build()).build(); 
 	}
 }

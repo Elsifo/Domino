@@ -2,7 +2,6 @@ package it.beyondthecube.domino.data.config;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.SQLSyntaxErrorException;
 
 import it.beyondthecube.domino.exceptions.DatabaseException;
 

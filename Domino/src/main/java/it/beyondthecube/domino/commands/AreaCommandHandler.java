@@ -136,8 +136,7 @@ public class AreaCommandHandler implements CommandExecutor {
 			AreaManager.setAreaType(a, type);
 			if (type.equals(AreaType.TOWNHALL)) {
 				PoliticalManager.changeTownHall(a, c, false, false);
-				PoliticalManager.setSpawn(ComLocation.getComLocation(p.getLocation()),
-						ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId())));
+				PoliticalManager.setSpawn(ComLocation.getComLocation(p.getLocation()),c);
 			}
 		} catch (DatabaseException e) {
 			p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
@@ -190,9 +189,14 @@ public class AreaCommandHandler implements CommandExecutor {
 		case "claim": {
 			if (r == null)
 				return CommandResult.success();
+			Optional<City> oc = ResidentManager.getCity(r);
+			if(!oc.isPresent()) {
+				p.sendMessage(Utility.pluginMessage("Not part of any city"));
+				return CommandResult.success();
+			}
 			try {
 				if (ResidentManager.hasSelections(r)) {
-					City c = ResidentManager.getCity(r);
+					City c = oc.get();
 					if (c.isAssistant(r) || c.isMayor(r)) {
 						AreaManager.newArea(UUID.randomUUID(), r.getSelection1(), r.getSelection2(), r, c, false,
 								new PermissionSet(), false, false, AreaType.NONE, 0, 0);
@@ -249,7 +253,7 @@ public class AreaCommandHandler implements CommandExecutor {
 				return CommandResult.success();
 			try {
 				if (!ResidentManager.hasCity(r))
-					p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
+					p.sendMessage((Utility.pluginMessage("Not part of any city")));
 				if (ResidentManager.getCity(r).equals(AreaManager.getCity(AreaManager.getArea(p.getLocation())))) {
 					if (AreaManager.getArea(p.getLocation()).isForSale()) {
 						if (AreaManager.acquireArea(p, p.getLocation()))

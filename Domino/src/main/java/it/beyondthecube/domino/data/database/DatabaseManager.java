@@ -73,11 +73,12 @@ public class DatabaseManager {
 			ResultSet r = q.excecuteUpdate();
 			if (!r.first())
 				throw new DatabaseException(q, null, "SQL exception");
-			String[] params = { name, mayor.getPlayer().toString(), String.valueOf(n.getID()), String.valueOf(0),
+			String[] params = { name, mayor.getPlayer().toString(), String.valueOf(n.getID()), "0",
 					(new PermissionSet()).toString(), String.valueOf(r.getInt(1)) };
 			q = new SQLQuery("insert into £.city (name,mayor,nation,tax,perms,spawn) values(?,?,?,?,?,?);", params,
 					msqlc);
 			r = q.excecuteUpdate();
+			r.next();
 			int id = r.getInt(1);
 			String[] params2 = { String.valueOf(n.getID()), String.valueOf(id), String.valueOf(iscapital ? 1 : 0) };
 			q = new SQLQuery("insert into £.citynation(fknation,fkcity,iscapital) values(?,?,?);", params2, msqlc);

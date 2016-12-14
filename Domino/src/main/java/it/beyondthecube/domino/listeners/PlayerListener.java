@@ -103,10 +103,8 @@ public class PlayerListener {
 	public void onChatMessage(MessageChannelEvent.Chat e, @First Player p) {
 		Resident r = ResidentManager.getResident(p.getUniqueId());
 		if (ResidentManager.isCitizen(r)) {
-		MessageFormatter mf = e.getFormatter();
-			City c = null;
-			
-			c = ResidentManager.getCity(r);
+			MessageFormatter mf = e.getFormatter();
+			City c = ResidentManager.getCity(r).get();
 			Nation n = PoliticalManager.getNation(c);
 			Text msg = Text.builder("[").append(Text.builder(n.getName()).color(TextColors.LIGHT_PURPLE)
 					.append(Text.builder("|").color(TextColors.WHITE)

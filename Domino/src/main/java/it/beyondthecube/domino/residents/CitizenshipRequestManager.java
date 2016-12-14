@@ -20,7 +20,7 @@ public class CitizenshipRequestManager {
 		Resident adder = cs.getSource();
 		Player ad = Sponge.getServer().getPlayer(added.getPlayer()).get();
 		Player ar = Sponge.getServer().getPlayer(adder.getPlayer()).get();
-		City c = ResidentManager.getCity(adder);
+		City c = ResidentManager.getCity(adder).get();
 		ar.sendMessage(Text.of(Utility.pluginMessage("Invitation sent")));
 		ad.sendMessage(Text.of(Utility.pluginMessage(
 				"You've been invited to city " + c.getName() + ". Type /dom accept to accept or /dom deny to deny")));

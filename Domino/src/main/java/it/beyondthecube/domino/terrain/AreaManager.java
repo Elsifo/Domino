@@ -1,6 +1,7 @@
 package it.beyondthecube.domino.terrain;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -39,14 +40,14 @@ public class AreaManager {
 	}
 
 	private static PermTarget getTarget(Area a, Resident r) {
-		if (ResidentManager.getCity(r) == null) return PermTarget.ALL;
+		if (!ResidentManager.getCity(r).isPresent()) return PermTarget.ALL;
 		if (a.getOwner().equals(r))
 			return PermTarget.OWNER;
 		if (ResidentManager.isFriend(a.getOwner(), r))
 			return PermTarget.FRIEND;
 		if (ResidentManager.getCity(r).equals(AreaManager.getCity(a)))
 			return PermTarget.CITIZEN;
-		if (PoliticalManager.getNation(ResidentManager.getCity(r))
+		if (PoliticalManager.getNation(ResidentManager.getCity(r).get())
 				.equals(PoliticalManager.getNation(AreaManager.getCity(a))))
 			return PermTarget.ALLY;
 		return PermTarget.ALL;
@@ -107,7 +108,7 @@ public class AreaManager {
 			if (a.hasOwner())
 				EconomyLinker.deposit(a.getOwner().getPlayer(), am);
 			else
-				EconomyLinker.deposit(ResidentManager.getCity(r), a.salePrice());
+				EconomyLinker.deposit(ResidentManager.getCity(r).get(), a.salePrice());
 			a.setOwner(r);
 			a.notForSale();
 			a.setSalePrice(0);
@@ -185,9 +186,10 @@ public class AreaManager {
 	}
 
 	public static boolean isClaimable(Location<Chunk> l, Resident r) {
-		if (!ResidentManager.hasCity(r))
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent())
 			return false;
-		City c = ResidentManager.getCity(r);
+		City c = oc.get();
 		World world = l.getExtent().getWorld();
 		boolean owncity = false;
 		Vector3i chunk = l.getChunkPosition();

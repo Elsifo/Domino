@@ -60,7 +60,11 @@ public class CommandHandler implements CommandExecutor {
 					return CommandResult.success();
 				}
 				Resident r = or.get();
-				PoliticalManager.setMayor(c, r);
+				if(ResidentManager.getCity(r).isPresent()) {
+					PoliticalManager.setMayor(c, r);
+				}
+				else 
+					p.sendMessage(Utility.pluginMessage("Player is not part of any town"));
 			} catch (DatabaseException e) {
 				p.sendMessage((Utility.errorMessage("ERROR: contact an admin")));
 			}

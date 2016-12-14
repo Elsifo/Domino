@@ -104,22 +104,29 @@ public class PoliticalManager {
 		return cities.get(c);
 	}
 
-	public static void addAssistant(Resident adder, Resident added)
-			throws InsufficientRankException, CityNotFoundException, DatabaseException {
-		City c = ResidentManager.getCity(adder);
+	public static boolean addAssistant(Resident adder, Resident added)
+			throws InsufficientRankException, DatabaseException {
+		Optional<City> oc = ResidentManager.getCity(adder);
+		if(!oc.isPresent()) return false;
+		City c = oc.get();
 		if (c.isMayor(adder)) {
 			DatabaseManager.getInstance().addAssistant(added);
 			c.addAssistant(added);
+			return true;
 		} else
 			throw new InsufficientRankException(adder, "Insufficient rank");
 	}
 
-	public static void removeAssistant(Resident remover, Resident removed)
-			throws InsufficientRankException, CityNotFoundException, DatabaseException {
-		City c = ResidentManager.getCity(remover);
+	public static boolean removeAssistant(Resident remover, Resident removed)
+			throws InsufficientRankException, DatabaseException {
+		Optional<City> oc = ResidentManager.getCity(remover);
+		if(!oc.isPresent()) 
+			return false;
+		City c = oc.get();
 		if (c.isMayor(remover)) {
 			DatabaseManager.getInstance().removeAssistant(removed);
 			c.removeAssistant(removed);
+			return true;
 		} else
 			throw new InsufficientRankException(remover, "Insufficient rank");
 	}
@@ -214,8 +221,10 @@ public class PoliticalManager {
 	}
 
 	public static void unclaim(Resident r, Location<World> l)
-			throws InsufficientRankException, CityNotFoundException, DatabaseException {
-		City c = ResidentManager.getCity(r);
+			throws InsufficientRankException, DatabaseException {
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) return;
+		City c = oc.get();
 		if (!c.isMayor(r) && !c.isAssistant(r))
 			throw new InsufficientRankException(r, "");
 		Area a = AreaManager.getArea(l);

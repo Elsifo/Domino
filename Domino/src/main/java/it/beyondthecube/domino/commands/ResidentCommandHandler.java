@@ -40,7 +40,7 @@ public class ResidentCommandHandler implements CommandExecutor {
 				.arguments(GenericArguments.optional(GenericArguments.onlyOne(
 						GenericArguments.string(Text.of("target"))))).child(toggle, "toggle")
 				.child(friends, "friends").build();
-		Sponge.getCommandManager().register(plugin, res, "resident");
+		Sponge.getCommandManager().register(plugin, res, "resident", "res");
 	}
 
 	private void showHelp(Player p) {

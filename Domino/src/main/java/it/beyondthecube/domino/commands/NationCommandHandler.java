@@ -52,7 +52,7 @@ public class NationCommandHandler implements CommandExecutor {
 				.child(set, "set").child(withdraw, "withdraw").child(deposit, "deposit").child(nnew, "new").build();
 		CommandSpec nc = CommandSpec.builder().executor(this::executeNC)
 				.arguments(GenericArguments.remainingJoinedStrings(Text.of("message"))).build();
-		Sponge.getCommandManager().register(plugin, nation, "nation");
+		Sponge.getCommandManager().register(plugin, nation, "nation", "nt");
 		Sponge.getCommandManager().register(plugin, nc, "nc");
 
 	}
@@ -83,17 +83,17 @@ public class NationCommandHandler implements CommandExecutor {
 			p.sendMessage((Utility.pluginMessage("You don't belong to a city")));
 			return CommandResult.success();
 		}
-		Nation n = PoliticalManager.getNation(ResidentManager.getCity(r));
+		Nation n = PoliticalManager.getNation(ResidentManager.getCity(r).get());
 		Collection<Object> cobj = args.getAll("message");
 		String msg = "";
 		for (Object o : cobj)
 			msg += (String) o + " ";
-		String m = Utility.nationChatMessage(p, msg);
+		Text m = Utility.nationChatMessage(p, msg);
 		for (Player rec : Sponge.getServer().getOnlinePlayers()) {
 			Resident rs = ResidentManager.getResident(rec.getUniqueId());
 			if (ResidentManager.hasCity(rs)) {
-				if (PoliticalManager.getNation(ResidentManager.getCity(rs)).equals(n)) {
-					rec.sendMessage(Text.of(m));
+				if (PoliticalManager.getNation(ResidentManager.getCity(rs).get()).equals(n)) {
+					rec.sendMessage(m);
 				}
 			}
 		}
@@ -105,10 +105,15 @@ public class NationCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("You don't belong to any city"));
+			return CommandResult.success();
+		}
 		try {
 			Double d = Double.valueOf((String) args.getOne("amount").get());
 			if (EconomyLinker.canAfford(r.getPlayer(), d)) {
-				EconomyLinker.deposit(PoliticalManager.getNation(ResidentManager.getCity(r)), d);
+				EconomyLinker.deposit(PoliticalManager.getNation(oc.get()), d);
 				EconomyLinker.withdrawPlayer(r.getPlayer(), d);
 				p.sendMessage((Utility.pluginMessage("You've deposited " + d + " into your nation bank")));
 			} else
@@ -124,23 +129,24 @@ public class NationCommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		City c = ResidentManager.getCity(r);
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("You don't belong to any city"));
+			return CommandResult.success();
+		}
+		City c = oc.get();
 		try {
 			Double d = Double.parseDouble((String) args.getOne("amount").get());
-			if (c == null)
-				p.sendMessage(Text.of("You aren't a citizen"));
-			else {
-				Nation n = PoliticalManager.getNation(c);
-				if (n.getCapital().equals(c) && c.isMayor(r)) {
-					if (EconomyLinker.canAfford(r.getPlayer(), d)) {
-						EconomyLinker.withdraw(n, d);
-						EconomyLinker.deposit(r.getPlayer(), d);
-						p.sendMessage((Utility.pluginMessage(
-								"You've withdrawn " + d + EconomyLinker.getCurrencyNamePlural() + "from nation bank")));
-					}
-				} else
-					p.sendMessage((Utility.pluginMessage("Can't withdraw from your nation bank")));
-			}
+			Nation n = PoliticalManager.getNation(c);
+			if (n.getCapital().equals(c) && c.isMayor(r)) {
+				if (EconomyLinker.canAfford(r.getPlayer(), d)) {
+					EconomyLinker.withdraw(n, d);
+					EconomyLinker.deposit(r.getPlayer(), d);
+					p.sendMessage((Utility.pluginMessage(
+							"You've withdrawn " + d + EconomyLinker.getCurrencyNamePlural() + "from nation bank")));
+				}
+			} else
+				p.sendMessage((Utility.pluginMessage("Can't withdraw from your nation bank")));
 		} catch (NumberFormatException e) {
 			p.sendMessage((Utility.pluginMessage("Not a valid amount")));
 		}
@@ -151,9 +157,14 @@ public class NationCommandHandler implements CommandExecutor {
 		if (!(src instanceof Player))
 			return CommandResult.empty();
 		Player p = (Player) src;
+		Optional<City> oc = ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId()));
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("You don't belong to any city"));
+			return CommandResult.success();
+		}
 		try {
 			PoliticalManager.setTax(
-					PoliticalManager.getNation(ResidentManager.getCity(ResidentManager.getResident(p.getUniqueId()))),
+					PoliticalManager.getNation(oc.get()),
 					Double.parseDouble((String) args.getOne("amount").get()));
 			p.sendMessage((Utility.pluginMessage("Nation tax set")));
 		} catch (NumberFormatException ex) {
@@ -199,19 +210,4 @@ public class NationCommandHandler implements CommandExecutor {
 		}
 		return CommandResult.success();
 	}
-
-	/*
-	 * public boolean comm(CommandSender sender, Command cmd, String label,
-	 * String[] args) { if (!(sender instanceof Player)) return true; Player p =
-	 * (Player) sender; Resident r =
-	 * ResidentManager.getResident(p.getUniqueId()); if
-	 * (cmd.getName().equals("nation")) { if (args.length == 0) { if
-	 * (!ResidentManager.hasCity(r)) {
-	 * p.sendMessage((Utility.pluginMessage("You don't belong to a city")
-	 * ); return true; } Nation n =
-	 * PoliticalManager.getNation(ResidentManager.getCity(r));
-	 * Utility.nationInfo(n, p); return true; } switch (args[0]) {
-	 * 
-	 * } } return false; }
-	 */
 }
