@@ -1,20 +1,28 @@
 package it.beyondthecube.domino.listeners;
 
+import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.NotifyNeighborBlockEvent;
+import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import com.flowpowered.math.vector.Vector3i;
+
 import it.beyondthecube.domino.Utility;
+import it.beyondthecube.domino.residents.Resident;
 import it.beyondthecube.domino.residents.ResidentManager;
 import it.beyondthecube.domino.terrain.AreaManager;
 import it.beyondthecube.domino.terrain.AreaManager.ActionType;
@@ -26,6 +34,7 @@ public class AreaListener {
 
 	@Listener
 	public void onBlockBreak(ChangeBlockEvent.Break e, @Root Player p) {
+		if(p.hasPermission("domino")) return;
 		Location<World> l = e.getTransactions().get(0).getDefault().getLocation().get();
 		if (!(AreaManager.canPerformAction(ResidentManager.getResident(p.getUniqueId()), l, ActionType.BUILD))) {
 			p.sendMessage(Text.of(Utility.pluginMessage("You aren't allowed to build here")));
@@ -35,6 +44,7 @@ public class AreaListener {
 
 	@Listener
 	public void onBlockPlace(ChangeBlockEvent.Place e, @Root Player p) {
+		if(p.hasPermission("domino")) return;
 		Location<World> l = e.getTransactions().get(0).getDefault().getLocation().get();
 		if (!(AreaManager.canPerformAction(ResidentManager.getResident(p.getUniqueId()), l, ActionType.BUILD))) {
 			p.sendMessage(Text.of(Utility.pluginMessage("You aren't allowed to build here")));
@@ -84,12 +94,12 @@ public class AreaListener {
 	}
 
 	private boolean isSwitchableRedstone(BlockState b) {
-		switch (b.getType().getId()) {
-		case "TRIPWIRE":
-		case "GOLD_PLATE":
-		case "IRON_PLATE":
-		case "WOOD_PLATE":
-		case "STONE_PLATE":
+		switch (b.getType().getId().substring(10)) {
+		case "tripwire":
+		case "heavy_weighted_pressure_plate":
+		case "light_weighted_pressure_plate":
+		case "wooden_pressure_plate":
+		case "stone_pressure_plate":
 			return true;
 		default:
 			return false;
@@ -98,6 +108,7 @@ public class AreaListener {
 
 	@Listener
 	public void onBlockInteract(InteractBlockEvent.Secondary e, @Root Player p) {
+		if(p.hasPermission("domino")) return;
 		if(!e.getTargetBlock().getLocation().isPresent()) return;
 		Location<World> l = e.getTargetBlock().getLocation().get();
 		Optional<ItemStack> is = p.getItemInHand(HandTypes.MAIN_HAND);
@@ -128,16 +139,21 @@ public class AreaListener {
 			return false;
 		}
 	}
-	/*
 	@Listener
-	public void onBlockRedstone(BlockRedstoneEvent e) {
-		Block b = e.getBlock();
-		try {
-			if (isSwitchableRedstone(b)) {
-				Bukkit.broadcastMessage("yolo"); // TODO todo
+	public void onBlockRedstone(NotifyNeighborBlockEvent e, @First Player p, @Root BlockSnapshot blockSource) {
+		if(p.hasPermission("domino")) return;
+		Resident r = ResidentManager.getResident(p.getUniqueId());
+		for(Entry<Direction,BlockState> entry : e.getNeighbors().entrySet()) {
+			Vector3i v3i = entry.getKey().asBlockOffset();
+			Optional<Location<World>> onewl = blockSource.getLocation();
+			if(onewl.isPresent()) {
+				Location<World> newl = onewl.get().add(v3i);
+				if(!AreaManager.canPerformAction(r, newl, ActionType.INTERACT) && isSwitchableRedstone(entry.getValue())) {
+					p.sendMessage(Utility.pluginMessage("Can't interact with this block"));
+					e.setCancelled(true);
+					return;
+				}
 			}
-		} catch (NotInteractableException ex) {
-			// Nothing to do...
 		}
-	}*/
+	}
 }

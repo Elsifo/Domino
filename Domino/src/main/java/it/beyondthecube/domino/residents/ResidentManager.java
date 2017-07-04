@@ -1,6 +1,5 @@
 package it.beyondthecube.domino.residents;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,19 +11,19 @@ import java.util.stream.Stream;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
-import it.beyondthecube.domino.data.config.PluginConfig;
+import it.beyondthecube.domino.data.config.ConfigManager;
 import it.beyondthecube.domino.data.database.DatabaseManager;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
 import it.beyondthecube.domino.politicals.City;
+import it.beyondthecube.domino.terrain.AreaManager;
 
 public class ResidentManager {
 	private static HashMap<UUID, Resident> index = new HashMap<>();
@@ -47,24 +46,22 @@ public class ResidentManager {
 		return index.get(p);
 	}
 
-	public static Resident newResident(User p, City c) throws DatabaseException {
-		DatabaseManager.getInstance().createResident(p);
-		Resident r = new Resident(p.getUniqueId(), p.getName());
+	public static Resident newResident(UUID u, String nick, City c) throws DatabaseException {
+		DatabaseManager.getInstance().createResident(u,nick);
+		Resident r = new Resident(u, nick);
 		residents.put(r, c);
-		index.put(p.getUniqueId(), r);
-		search.put(p.getName(), r);
+		index.put(u, r);
+		search.put(nick, r);
 		return r;
 	}
 
-	public static void setCity(Resident added, City c) throws CityNotFoundException {
-		if (c == null)
-			throw new CityNotFoundException();
+	public static void setCity(Resident added, City c) {
 		residents.put(added, c);
 	}
 
-	public static void addToCity(Resident adder, Resident added, City c) throws IOException {
+	public static void addToCity(Resident adder, Resident added, City c) {
 		residents.put(added, c);
-		c.addPlotBonus(Integer.parseInt((String) PluginConfig.getValue("domino","city","citizenbonusplot")));
+		c.addPlotBonus(ConfigManager.getConfig().getCitizenPlotBonus());
 	}
 
 	public static void removeResident(Resident remover, Resident removed, City crer)
@@ -74,6 +71,7 @@ public class ResidentManager {
 			if (crer.equals(cred)) {
 				DatabaseManager.getInstance().removeResident(removed, cred);
 				residents.put(removed, null);
+				AreaManager.unclaimAreas(removed);
 			} else {
 				throw new InsufficientRankException(remover, "Insufficient rank");
 			}
@@ -86,7 +84,7 @@ public class ResidentManager {
 	}
 
 	public static Optional<City> getCity(Resident added) {
-		return Optional.of(residents.get(added));
+		return Optional.ofNullable(residents.get(added));
 	}
 
 	public static void setSelection1(Player p, Location<World> location) {
@@ -168,5 +166,9 @@ public class ResidentManager {
 		Optional<Resident> res = Optional.empty();
 		if(search.containsKey(nick)) res = Optional.of(search.get(nick));
 		return res;
+	}
+
+	public static void updateResident(UUID u, String nick) {
+		index.get(u).setNick(nick);
 	}
 }

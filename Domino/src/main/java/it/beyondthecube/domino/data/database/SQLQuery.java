@@ -16,14 +16,14 @@ public class SQLQuery {
 
 	public SQLQuery(String query, String[] params, MySQLConfig msqlc) {
 		this.msqlc = msqlc;
-		this.query = query.replace("£", msqlc.getDBName());
+		this.query = query.replace("Â£", msqlc.getDBName());
 		this.params = params;
 
 	}
 
 	public SQLQuery(String query, MySQLConfig msqlc) {
 		this.msqlc = msqlc;
-		this.query = query.replace("£", msqlc.getDBName());
+		this.query = query.replace("Â£", msqlc.getDBName());
 		this.params = null;
 	}
 

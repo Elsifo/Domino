@@ -6,7 +6,6 @@ import java.util.Calendar;
 import org.apache.commons.lang3.text.WordUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
@@ -17,7 +16,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.data.EconomyLinker;
-import it.beyondthecube.domino.data.config.PluginConfig;
+import it.beyondthecube.domino.data.config.ConfigManager;
 import it.beyondthecube.domino.exceptions.ParseException;
 import it.beyondthecube.domino.politicals.City;
 import it.beyondthecube.domino.politicals.Nation;
@@ -46,7 +45,7 @@ public class Utility {
 	}
 
 	public static boolean isTimeToCollect() throws IOException{
-		long last = Long.valueOf(PluginConfig.getValue("domino", "lasttaxcollection").toString());
+		long last = ConfigManager.getConfig().getLastTax();
 		long now = Calendar.getInstance().getTimeInMillis();
 		return (now - last > 86400000);	
 	}
@@ -116,7 +115,8 @@ public class Utility {
 				.color(TextColors.GREEN).style(TextStyles.BOLD)
 				.append(Text.builder(roced).color(TextColors.GOLD).style(TextStyles.RESET).build()).build()).build());
 		p.sendMessage(Text.builder("Mayor: ").color(TextColors.GOLD).style(TextStyles.BOLD)
-				.append(Text.builder(c.getMayor().getNick()).color(TextColors.GREEN).build()).build());
+				.append(Text.builder(c.getMayor().getNick()).color(TextColors.GREEN)
+				.style(TextStyles.RESET).build()).build());
 		Builder asst = Text.builder("Assistants: ").color(TextColors.GOLD).style(TextStyles.BOLD);
 		for (Resident r : c.getAssistants()) {
 			asst.append(Text.builder(r.getNick() + ";").color(TextColors.GREEN).style(TextStyles.RESET).build());

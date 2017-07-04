@@ -1,6 +1,5 @@
 package it.beyondthecube.domino.commands;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -16,13 +15,11 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Chunk;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.Domino;
 import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
-import it.beyondthecube.domino.data.config.PluginConfig;
+import it.beyondthecube.domino.data.config.ConfigManager;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
@@ -31,9 +28,11 @@ import it.beyondthecube.domino.politicals.City;
 import it.beyondthecube.domino.politicals.Nation;
 import it.beyondthecube.domino.politicals.PoliticalManager;
 import it.beyondthecube.domino.residents.Citizenship;
-import it.beyondthecube.domino.residents.CitizenshipRequestManager;
 import it.beyondthecube.domino.residents.Resident;
 import it.beyondthecube.domino.residents.ResidentManager;
+import it.beyondthecube.domino.tasks.CitizenshipTask;
+import it.beyondthecube.domino.tasks.CitySpawnTask;
+import it.beyondthecube.domino.tasks.TaskManager;
 import it.beyondthecube.domino.terrain.AreaManager;
 import it.beyondthecube.domino.terrain.ComLocation;
 
@@ -85,26 +84,34 @@ public class CityCommandHandler implements CommandExecutor {
 	}
 
 	private void showHelp(Player p) {
-		p.sendMessage(Text.of(TextColors.GOLD + "Command " + TextColors.GREEN + "/city" + TextColors.GOLD + " usage:"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city [name]" + TextColors.WHITE + " - shows own/other city info"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city list" + TextColors.WHITE + " - list all cities"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city leave" + TextColors.WHITE + " - leave your current city"));
-		p.sendMessage(
-				Text.of(TextColors.GREEN + "/city claim|unclaim" + TextColors.WHITE + " - add/remove a plot claim"));
-		p.sendMessage(
-				Text.of(TextColors.GREEN + "/city spawn" + TextColors.WHITE + " - teleport to your city spawnpoint"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city <add|remove> <player>" + TextColors.WHITE
-				+ " - add/remove a player from your city"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city <add|remove> assistant <player>" + TextColors.WHITE
-				+ " - add/remove assistants from your city"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city <withdraw|deposit> <amount>" + TextColors.WHITE
-				+ " - withdraw/deposit amount from/in your city account"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city set tax <amount>" + TextColors.WHITE + " - set city tax"));
-		p.sendMessage(Text
-				.of(TextColors.GREEN + "/city perm <build|interact|itemuse> <owner|friends|citizens|all> <true|false>"
-						+ TextColors.WHITE + " - sets a permission"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/city toggle <pvp|fire|mobs>" + TextColors.WHITE
-				+ " - turn pvp, fire or mobs on/off"));
+		p.sendMessage(Text.builder("Command ").color(TextColors.GOLD)
+				.append(Text.builder("/city").color(TextColors.GREEN)
+				.append(Text.builder(" usage").color(TextColors.GOLD).build()).build()).build());
+		p.sendMessage(Text.builder("/city [name]").color(TextColors.GREEN).append(Text.builder(
+				" - shows own/other city info").color(TextColors.WHITE).build()).build()); 
+		p.sendMessage(Text.builder("/city list").color(TextColors.GREEN).append(Text.builder(
+				" - list all cities").color(TextColors.WHITE).build()).build()); 
+		p.sendMessage(Text.builder("/city leave").color(TextColors.GREEN).append(Text.builder(
+				" - leave your current city").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city claim|unclaim").color(TextColors.GREEN).append(Text.builder(
+				" - add/remove a plot claim").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city spawn").color(TextColors.GREEN).append(Text.builder(
+				" - teleport to your city spawnpoint").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city <add|remove> <player>").color(TextColors.GREEN).append(Text.builder(
+				" - add/remove a player from your city").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city <add|remove> assistant <player>").color(TextColors.WHITE)
+				.append(Text.builder(" - add/remove assistants from your city")
+						.color(TextColors.GREEN).build()).build());
+		p.sendMessage(Text.builder("/city <withdraw|deposit> <amount>").color(TextColors.GREEN)
+				.append(Text.builder(" - withdraw/deposit amount from/in your city account")
+				.color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city set tax <amount>").color(TextColors.GREEN).append(Text.builder(
+				" - set city tax").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city perm <build|interact|itemuse> " +
+				"<owner|friends|citizens|all> <true|false>").color(TextColors.GREEN)
+				.append(Text.builder(" - sets a permission").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/city toggle <pvp|fire|mobs>").color(TextColors.GREEN).append(Text.builder(
+				" - turn pvp, fire or mobs on/off").color(TextColors.WHITE).build()).build());
 	}
 
 	public CommandResult executeToggle(CommandSource src, CommandContext args) throws CommandException {
@@ -202,7 +209,7 @@ public class CityCommandHandler implements CommandExecutor {
 			p.sendMessage((Utility.pluginMessage("This player is not online")));
 			return CommandResult.success();
 		}
-		CitizenshipRequestManager.newRequest(new Citizenship(added, r, c, plugin));
+		TaskManager.getInstance().newTask(added, new CitizenshipTask(new Citizenship(added, r, c, plugin)), 1200);
 		return CommandResult.success();
 	}
 
@@ -468,24 +475,17 @@ public class CityCommandHandler implements CommandExecutor {
 				return CommandResult.success();
 			}
 			case "spawn": {
-				double price=0;
-				try {
-					price = Double.valueOf(PluginConfig.getValue("domino", "city", "spawn", "price").toString());
-				} catch (NumberFormatException | IOException e) {
-					p.sendMessage(Utility.errorMessage("Error reading config file"));
-					return CommandResult.empty();
-				}
+				double price = ConfigManager.getConfig().getSpawnPrice();
 				if (EconomyLinker.canAfford(r.getPlayer(), price)) {
 					ComLocation spawn = c.getSpawn();
 					if (spawn == null)
 						p.sendMessage((Utility.pluginMessage("Your city has no spawn point!")));
 					else {
-						Location<World> sp = spawn.getLocation();
-						p.transferToWorld(sp.getExtent(), sp.getPosition());
-						EconomyLinker.withdrawPlayer(r.getPlayer(), price);
-						EconomyLinker.deposit(c, price);
-						p.sendMessage(
-								(Utility.pluginMessage("You've been charged " + price + " for city spawn")));
+						TaskManager t = TaskManager.getInstance();
+						long timer = ConfigManager.getConfig().getSpawnDelay();
+						if(p.hasPermission("domino")) t.newTask(r, new CitySpawnTask(c, p), 0);
+						else t.newTask(r, new CitySpawnTask(c, p), timer);
+						p.sendMessage(Utility.pluginMessage("City spawn request accepted, don't move for" + timer/20 +" seconds..."));
 					}
 				} else
 					p.sendMessage((Utility.pluginMessage("Can't afford city spawn")));
@@ -497,6 +497,10 @@ public class CityCommandHandler implements CommandExecutor {
 					return CommandResult.success();
 				}
 				try {
+					if(!EconomyLinker.canBankAfford(c.getName() + "" + c.getID(),ConfigManager.getConfig().getClaimPrice())) {
+						p.sendMessage(Utility.pluginMessage("Town can't afford chunk claim"));
+						return CommandResult.success();					
+					}
 					p.sendMessage((Utility.pluginMessage("Processing plot claim")));
 					Chunk k = p.getWorld().getChunkAtBlock(p.getLocation().getBlockPosition()).get();
 					if (!(PoliticalManager.plotAlreadyClaimed(k, c))) {
@@ -511,7 +515,7 @@ public class CityCommandHandler implements CommandExecutor {
 				} catch (DatabaseException e) {
 					p.sendMessage((Utility.pluginMessage("ERROR: contact an administrator")));
 					return CommandResult.success();
-				}
+				} 
 			}
 			case "unclaim": {
 				if (!AreaManager.existsArea(p.getLocation())) {
@@ -542,14 +546,27 @@ public class CityCommandHandler implements CommandExecutor {
 						return CommandResult.success();
 					}
 					ResidentManager.removeResident(r, r, c);
-					Sponge.getServer().getPlayer(r.getPlayer()).get()
-							.sendMessage((Utility.pluginMessage("You left your town")));
+					p.sendMessage((Utility.pluginMessage("You left your town")));
+					for(Resident rs : ResidentManager.getResidents(c)) {
+						Optional<Player> prs = Sponge.getServer().getPlayer(rs.getPlayer());
+						if(prs.isPresent())
+							prs.get().sendMessage(Utility.pluginMessage(p.getName() + " left town"));
+					}
 				} catch (DatabaseException e) {
 					p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
 				} catch (InsufficientRankException e) {
 					p.sendMessage((Utility.pluginMessage("Insufficient rank")));
 				}
 				return CommandResult.success();
+			}
+			case "online": {
+				String ris = "";
+				for(Resident rs : ResidentManager.getResidents(c)) {
+					Optional<Player> prs = Sponge.getServer().getPlayer(rs.getPlayer());
+					if(prs.isPresent())
+						ris += prs.get().getName() + ",";
+				}
+				p.sendMessage(Utility.pluginMessage("Online players:\n"+ris));
 			}
 			default: {
 				Optional<City> ct = PoliticalManager.getCity(os.get());

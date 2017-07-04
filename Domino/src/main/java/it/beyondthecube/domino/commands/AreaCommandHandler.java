@@ -20,7 +20,6 @@ import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.AreaBoundsException;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
 import it.beyondthecube.domino.exceptions.ParseException;
@@ -36,7 +35,9 @@ import it.beyondthecube.domino.terrain.ComLocation;
 
 public class AreaCommandHandler implements CommandExecutor {
 	private void showHelp(Player p) {
-		p.sendMessage(Text.of(TextColors.GOLD + "Command " + TextColors.GREEN + "/area" + TextColors.GOLD + " usage:"));
+		p.sendMessage(Text.builder("Command ").color(TextColors.GOLD)
+				.append(Text.builder("/area").color(TextColors.GREEN)
+				.append(Text.builder(" usage").color(TextColors.GOLD).build()).build()).build());
 		p.sendMessage(Text.of(TextColors.GREEN + "/area" + TextColors.WHITE + " - shows area info"));
 		p.sendMessage(
 				Text.of(TextColors.GREEN + "/area claim" + TextColors.WHITE + " - claim an area from 2 selections"));
@@ -100,6 +101,22 @@ public class AreaCommandHandler implements CommandExecutor {
 		if (!(src instanceof Player))
 			return CommandResult.empty();
 		Player p = (Player) src;
+		Area a = AreaManager.getArea(p.getLocation());
+		Resident r = ResidentManager.getResident(p.getUniqueId());
+		if(a == null) {
+			p.sendMessage(Utility.pluginMessage("Area not found"));
+			return CommandResult.success();
+		}
+		City c = AreaManager.getCity(a);
+		Optional<City> oc = ResidentManager.getCity(r);
+		if(!oc.isPresent()) {
+			p.sendMessage(Utility.pluginMessage("Not part of any city"));
+			return CommandResult.success();
+		}
+		if(!oc.get().equals(c)) {
+			p.sendMessage(Utility.pluginMessage("Not part of this city"));
+			return CommandResult.success();
+		}
 		try {
 			AreaManager.setPermissions(ResidentManager.getResident(p.getUniqueId()), p.getLocation(),
 					(String) args.getOne("type").get(), (String) args.getOne("target").get(),
@@ -110,8 +127,6 @@ public class AreaCommandHandler implements CommandExecutor {
 			p.sendMessage(Text.of(Utility.pluginMessage("Syntax error: " + e.getMessage() + " not recognized")));
 		} catch (DatabaseException e) {
 			p.sendMessage((Utility.errorMessage("ERROR: contact an administrator")));
-		} catch (CityNotFoundException e) {
-			p.sendMessage((Utility.pluginMessage("You don't belong to this city")));
 		}
 		return CommandResult.success();
 	}
@@ -254,7 +269,7 @@ public class AreaCommandHandler implements CommandExecutor {
 			try {
 				if (!ResidentManager.hasCity(r))
 					p.sendMessage((Utility.pluginMessage("Not part of any city")));
-				if (ResidentManager.getCity(r).equals(AreaManager.getCity(AreaManager.getArea(p.getLocation())))) {
+				if (ResidentManager.getCity(r).get().equals(AreaManager.getCity(AreaManager.getArea(p.getLocation())))) {
 					if (AreaManager.getArea(p.getLocation()).isForSale()) {
 						if (AreaManager.acquireArea(p, p.getLocation()))
 							p.sendMessage((Utility.pluginMessage("Area bought")));

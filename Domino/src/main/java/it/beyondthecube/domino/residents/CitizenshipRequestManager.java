@@ -11,6 +11,8 @@ import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.politicals.City;
+import it.beyondthecube.domino.tasks.CitizenshipTask;
+import it.beyondthecube.domino.tasks.TaskManager;
 
 public class CitizenshipRequestManager {
 	private static HashMap<Resident, Citizenship> requests = new HashMap<Resident, Citizenship>();
@@ -24,8 +26,9 @@ public class CitizenshipRequestManager {
 		ar.sendMessage(Text.of(Utility.pluginMessage("Invitation sent")));
 		ad.sendMessage(Text.of(Utility.pluginMessage(
 				"You've been invited to city " + c.getName() + ". Type /dom accept to accept or /dom deny to deny")));
+		CitizenshipTask task = new CitizenshipTask(cs); 
 		requests.put(added, cs);
-		requests.get(cs.getTarget()).runTask();
+		TaskManager.getInstance().newTask(added, task, 900L);
 	}
 
 	public static void remove(Resident added) {
@@ -33,7 +36,7 @@ public class CitizenshipRequestManager {
 	}
 
 	public static void requestAccepted(Resident added) throws IOException {
-		requests.get(added).stopTask();
+		TaskManager.getInstance().cancelTask(added);
 		City c = requests.get(added).getCity();
 		try {
 			DatabaseManager.getInstance().addResident(added, c);
@@ -50,7 +53,7 @@ public class CitizenshipRequestManager {
 	}
 
 	public static void requestDenied(Resident added) {
-		requests.get(added).stopTask();
+	    TaskManager.getInstance().cancelTask(added);
 		remove(added);
 		Player p = Sponge.getServer().getPlayer(added.getPlayer()).get();
 		if (p.isOnline())

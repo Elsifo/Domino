@@ -63,6 +63,7 @@ public class MySQLCreate {
 				"`balance` int(11) NOT NULL DEFAULT '0'," +
 				"`nation` varchar(45) DEFAULT NULL," +
 				"`toggles` varchar(45) NOT NULL DEFAULT '{false-false-false}'," +
+				"`plotnum` int(11) NOT NULL DEFAULT 50" +
 				"PRIMARY KEY (`idcity`)," +
 				"KEY `fkspawn_idx` (`spawn`)," +
 				"CONSTRAINT `fkspawn` FOREIGN KEY (`spawn`) REFERENCES `location` (`idlocation`) ON DELETE NO ACTION ON UPDATE NO ACTION" +

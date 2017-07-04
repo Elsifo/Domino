@@ -17,7 +17,6 @@ import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.AreaBoundsException;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
 import it.beyondthecube.domino.exceptions.ParseException;
@@ -41,13 +40,14 @@ public class AreaManager {
 
 	private static PermTarget getTarget(Area a, Resident r) {
 		if (!ResidentManager.getCity(r).isPresent()) return PermTarget.ALL;
+		City c = ResidentManager.getCity(r).get();
 		if (a.getOwner().equals(r))
 			return PermTarget.OWNER;
 		if (ResidentManager.isFriend(a.getOwner(), r))
 			return PermTarget.FRIEND;
-		if (ResidentManager.getCity(r).equals(AreaManager.getCity(a)))
+		if (c.equals(AreaManager.getCity(a)))
 			return PermTarget.CITIZEN;
-		if (PoliticalManager.getNation(ResidentManager.getCity(r).get())
+		if (PoliticalManager.getNation(c)
 				.equals(PoliticalManager.getNation(AreaManager.getCity(a))))
 			return PermTarget.ALLY;
 		return PermTarget.ALL;
@@ -124,7 +124,9 @@ public class AreaManager {
 	public static boolean canSell(Player p, Area a) {
 		City c = areas.get(a);
 		Resident r = ResidentManager.getResident(p.getUniqueId());
-		if (ResidentManager.getCity(r).equals(c)) {
+		Optional<City> ct = ResidentManager.getCity(r);
+		if(!ct.isPresent()) return false;
+		if (ct.get().equals(c)) {
 			boolean hasRank = (c.isMayor(r) || c.isAssistant(r));
 			if (hasRank)
 				return true;
@@ -170,7 +172,7 @@ public class AreaManager {
 	}
 
 	public static void setPermissions(Resident r, Location<World> l, String string, String string2, String string3)
-			throws InsufficientRankException, ParseException, DatabaseException, CityNotFoundException {
+			throws InsufficientRankException, ParseException, DatabaseException {
 		Area a = getArea(l);
 		City c = AreaManager.getCity(a);
 		if (c.isAssistant(r) || c.isMayor(r) || a.getOwner().equals(r)) {
@@ -268,5 +270,19 @@ public class AreaManager {
 	public static void setSalePrice(Area a, double d) throws DatabaseException {
 		DatabaseManager.getInstance().setSalePrice(a, d);
 		a.setSalePrice(d);
+	}
+
+	public static void unclaimAreas(Resident removed) {
+		for(Area a:areas.keySet()) {
+			if(a.hasOwner() && a.getOwner().equals(removed)) {
+				try {
+					if(a.isPlotClaim()) setOwner(a, null);
+					else AreaManager.unclaimArea(a);
+				}
+				catch (DatabaseException e) {
+					Utility.sendConsole("Database error");
+				}
+			}
+		}
 	}
 }

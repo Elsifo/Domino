@@ -1,12 +1,14 @@
 package it.beyondthecube.domino;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingServerEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
@@ -24,7 +26,7 @@ import it.beyondthecube.domino.commands.NationCommandHandler;
 import it.beyondthecube.domino.commands.ResidentCommandHandler;
 import it.beyondthecube.domino.data.EconomyLinker;
 import it.beyondthecube.domino.data.config.MySQLConfig;
-import it.beyondthecube.domino.data.config.PluginConfig;
+import it.beyondthecube.domino.data.config.ConfigManager;
 import it.beyondthecube.domino.data.database.DatabaseManager;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.listeners.AreaListener;
@@ -32,11 +34,12 @@ import it.beyondthecube.domino.listeners.LockListener;
 import it.beyondthecube.domino.listeners.PlayerListener;
 import it.beyondthecube.domino.listeners.TerrainListener;
 import it.beyondthecube.domino.tasks.MobTask;
+import it.beyondthecube.domino.tasks.TaskManager;
 import it.beyondthecube.domino.tasks.TaxesTask;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id = "domino", name = "Domino", version = "0.2alpha3-SPONGE")
+@Plugin(id = "domino", name = "Domino", version = "0.2alpha4-SPONGE", description = "Political plugin with 3d areas")
 public class Domino {
 	private boolean locked;
 	
@@ -71,19 +74,25 @@ public class Domino {
 	}
 
 	public void load()  {
-		switch(PluginConfig.init(defaultConf, loader)) {
-		case ERROR: {
+		try {
+			switch(ConfigManager.init(defaultConf, loader)) {
+			case ERROR: {
+				Utility.sendConsole("Could not read config file. Not activating...");
+				return;
+			}
+			case CREATE: {
+				Utility.sendConsole("Edit the newly created config. Not actiating...");
+				return;
+			}
+			case SUCCESS: {
+				Utility.sendConsole("Config file loaded correctly");
+			}
+			}
+		} catch (IOException e1) {
 			Utility.sendConsole("Could not read config file. Not activating...");
 			return;
 		}
-		case CREATE: {
-			Utility.sendConsole("Edit the newly created config. Not actiating...");
-			return;
-		}
-		case SUCCESS: {
-			Utility.sendConsole("Config file loaded correctly");
-		}
-		}
+		TaskManager.getInstance().setPlugin(this);
 		DatabaseManager.getInstance().setMySQLConfig(new MySQLConfig());
 		DatabaseManager.getInstance().setGame(game);
 		try {
@@ -108,9 +117,6 @@ public class Domino {
 			Utility.sendConsole(
 					"An error ha occured while reading/writing from database, the plugin will load in failsafe mode!");
 			Utility.sendConsole("Error detail: " + e.getMessage());
-			Utility.sendConsole("Query that caused this exception: " + e.getQuery().getString());
-			Utility.sendConsole("Stack trace: ");
-			e.printPreviousStackTrace();
 			this.lock();
 		}
 		new CommandHandler(this);
@@ -143,6 +149,20 @@ public class Domino {
 
 	@Listener
 	public void onStopping(GameStoppingServerEvent e) {
+		try {
+			ConfigManager.saveConfig();
+			Utility.sendConsole("Config file saved");
+		} catch (IOException e1) {
+			Utility.sendConsole("Error saving config");
+		}
 		Utility.sendConsole("Disabled");
+	}
+	
+	@Listener
+	public void reload(GameReloadEvent event) {
+		Sponge.getServer().getBroadcastChannel().send(Utility.errorMessage("RELOADING"));
+	    onStopping(null);
+	    load();
+	    Sponge.getServer().getBroadcastChannel().send(Utility.pluginMessage("Reloaded"));
 	}
 }

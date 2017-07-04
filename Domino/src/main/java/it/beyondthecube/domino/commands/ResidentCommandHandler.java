@@ -44,16 +44,17 @@ public class ResidentCommandHandler implements CommandExecutor {
 	}
 
 	private void showHelp(Player p) {
-		p.sendMessage(Text.of
-				(TextColors.GOLD + "Command " + TextColors.GREEN + "/resident" + TextColors.GOLD + " usage:"));
-		p.sendMessage(Text.of
-				(TextColors.GREEN + "/resident [player]" + TextColors.WHITE + " - shows own/other player info"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/resident toggle selection" + TextColors.WHITE
-				+ " - activate/deactivate selection mode "));
-		p.sendMessage(Text.of(TextColors.GREEN + "/resident toggle borders" + TextColors.WHITE
-				+ " - activate for 10 seconds 3d areas borders"));
-		p.sendMessage(Text.of(TextColors.GREEN + "/resident friends <add|remove> <Player>" + TextColors.WHITE
-				+ " - add/remove friends"));
+		p.sendMessage(Text.builder("Command ").color(TextColors.GOLD)
+				.append(Text.builder("/resident").color(TextColors.GREEN)
+				.append(Text.builder(" usage").color(TextColors.GOLD).build()).build()).build());
+		p.sendMessage(Text.builder("/resident <player>").color(TextColors.GREEN).append(Text.builder(
+				" - shows own/other player info").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/resident toggle selection").color(TextColors.GREEN).append(Text.builder(
+				" - activate/deactivate selection mode ").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/resident toggle borders").color(TextColors.GREEN).append(Text.builder(
+				" - activate for 10 seconds 3d areas borders").color(TextColors.WHITE).build()).build());
+		p.sendMessage(Text.builder("/resident friends <add|remove> <Player>").color(TextColors.GREEN).append(
+				Text.builder(" - add/remove friends").color(TextColors.WHITE).build()).build());
 	}
 
 	private CommandResult executeFriends(CommandSource src, CommandContext args) throws CommandException {

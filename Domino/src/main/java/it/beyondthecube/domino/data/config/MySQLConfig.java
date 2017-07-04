@@ -17,7 +17,7 @@ public class MySQLConfig {
 	private char alias;
 
 	public MySQLConfig() {
-		String[] conf = PluginConfig.getMySQLConfiguration();
+		String[] conf = ConfigManager.getMySQLConfiguration();
 		host = conf[0];
 		user = conf[1];
 		pass = conf[2];

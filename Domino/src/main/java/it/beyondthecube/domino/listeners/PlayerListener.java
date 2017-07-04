@@ -1,5 +1,7 @@
 package it.beyondthecube.domino.listeners;
 
+import java.util.UUID;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -12,6 +14,7 @@ import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.message.MessageEvent.MessageFormatter;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
@@ -24,9 +27,10 @@ import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.politicals.City;
 import it.beyondthecube.domino.politicals.Nation;
 import it.beyondthecube.domino.politicals.PoliticalManager;
-import it.beyondthecube.domino.residents.CitizenshipRequestManager;
 import it.beyondthecube.domino.residents.Resident;
 import it.beyondthecube.domino.residents.ResidentManager;
+import it.beyondthecube.domino.tasks.CitySpawnTask;
+import it.beyondthecube.domino.tasks.TaskManager;
 import it.beyondthecube.domino.terrain.AreaManager;
 
 public class PlayerListener {
@@ -42,25 +46,36 @@ public class PlayerListener {
 		if (!(msgTo.equals(msgFrom))) {
 			p.sendMessage(msgTo);
 		}
+		TaskManager t = TaskManager.getInstance();
+		Resident r = ResidentManager.getResident(p.getUniqueId());
+		Location<World> lfrom = e.getFromTransform().getLocation();
+		Location<World> lto = e.getToTransform().getLocation();
+		if(lfrom.getPosition().equals(lto.getPosition())) return;
+		synchronized(TaskManager.getInstance()) {
+		    if(t.hasTask(r) && !(t.isStopped(r)) && t.getTaskType(r).equals(CitySpawnTask.class))
+			    t.cancelTask(r);
+		}
 	}
 
 	@Listener
-	public void onPlayerJoin(ClientConnectionEvent.Join e) {
-		e.getTargetEntity().sendMessage((Utility.pluginMessage(
-				"Running version: " + Sponge.getPluginManager().getPlugin("domino").get().getVersion().get())));
-	}
-
-	@Listener
-	public void onPlayerLogin(ClientConnectionEvent.Login e) {
+	public void onPlayerJoin(ClientConnectionEvent.Join e) { 
+		UUID u = e.getTargetEntity().getUniqueId();
+		String nick = e.getTargetEntity().getName();
 		try {
-			if (ResidentManager.getResident(e.getTargetUser().getUniqueId()) == null)
-				ResidentManager.newResident(e.getTargetUser(), null);
-			else
-				DatabaseManager.getInstance().updateResidentNickname(e.getTargetUser());
+			if (!DatabaseManager.getInstance().isResidentPresent(u)) {
+				ResidentManager.newResident(u, nick, null);
+				Utility.sendConsole("Player not found, creating...");
+			}
+			else {
+				Utility.sendConsole("Player found, loading...");
+				DatabaseManager.getInstance().updateResidentNickname(u, nick);
+				ResidentManager.updateResident(u, nick);
+			}
 		} catch (DatabaseException e1) {
-			e.setCancelled(true);
 			e.setMessage(Text.of("ERROR: contact an administrator"));
 		}
+		e.getTargetEntity().sendMessage((Utility.pluginMessage(
+				"Name: "+e.getTargetEntity().getName()+" Running version: " + Sponge.getPluginManager().getPlugin("domino").get().getVersion().get())));
 	}
 
 	@Listener
@@ -96,7 +111,7 @@ public class PlayerListener {
 
 	@Listener
 	public void onPlayerLogout(ClientConnectionEvent.Disconnect e) {
-		CitizenshipRequestManager.remove(ResidentManager.getResident(e.getTargetEntity().getUniqueId()));
+		TaskManager.getInstance().cancelTask(ResidentManager.getResident(e.getTargetEntity().getUniqueId()));
 	}
 
 	@Listener

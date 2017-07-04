@@ -147,11 +147,11 @@ public class Area {
 
 	public ArrayList<Location<World>> getBorderBlocks() {
 		ArrayList<Location<World>> blocks = new ArrayList<Location<World>>();
-		int topBlockX = (angle1.getBlockX() < angle2.getBlockX() ? angle2.getBlockX() : angle1.getBlockX());
+		int topBlockX = 1+(angle1.getBlockX() < angle2.getBlockX() ? angle2.getBlockX() : angle1.getBlockX());
 		int bottomBlockX = (angle1.getBlockX() > angle2.getBlockX() ? angle2.getBlockX() : angle1.getBlockX());
-		int topBlockY = (angle1.getBlockY() < angle2.getBlockY() ? angle2.getBlockY() : angle1.getBlockY());
+		int topBlockY = 1+(angle1.getBlockY() < angle2.getBlockY() ? angle2.getBlockY() : angle1.getBlockY());
 		int bottomBlockY = (angle1.getBlockY() > angle2.getBlockY() ? angle2.getBlockY() : angle1.getBlockY());
-		int topBlockZ = (angle1.getBlockZ() < angle2.getBlockZ() ? angle2.getBlockZ() : angle1.getBlockZ());
+		int topBlockZ = 1+(angle1.getBlockZ() < angle2.getBlockZ() ? angle2.getBlockZ() : angle1.getBlockZ());
 		int bottomBlockZ = (angle1.getBlockZ() > angle2.getBlockZ() ? angle2.getBlockZ() : angle1.getBlockZ());
 		for (int x = bottomBlockX; x <= topBlockX; x++) {
 			for (int y = bottomBlockY; y <= topBlockY; y++) {

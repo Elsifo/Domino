@@ -1,6 +1,5 @@
 package it.beyondthecube.domino.commands;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import org.spongepowered.api.Sponge;
@@ -21,9 +20,10 @@ import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.politicals.City;
 import it.beyondthecube.domino.politicals.Nation;
 import it.beyondthecube.domino.politicals.PoliticalManager;
-import it.beyondthecube.domino.residents.CitizenshipRequestManager;
 import it.beyondthecube.domino.residents.Resident;
 import it.beyondthecube.domino.residents.ResidentManager;
+import it.beyondthecube.domino.tasks.TaskManager;
+import it.beyondthecube.domino.tasks.TaskManager.TaskSignal;
 
 public class CommandHandler implements CommandExecutor {
 	private static Domino plugin;
@@ -36,7 +36,7 @@ public class CommandHandler implements CommandExecutor {
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("mayor"))),
 					GenericArguments.onlyOne(GenericArguments.string(Text.of("city")))).build();
 		CommandSpec set = CommandSpec.builder().child(mayor, "mayor").child(nation, "nation").build();
-		CommandSpec bonus = CommandSpec.builder().executor(this::executeBonus).permission("domino.give.bonus")
+		CommandSpec bonus = CommandSpec.builder().executor(this::executeBonus).permission("domino.givebonus")
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("city"))))
 				.arguments(GenericArguments.onlyOne(GenericArguments.string(Text.of("bonus")))).build();
 		CommandSpec give = CommandSpec.builder().child(bonus, "bonus").build();
@@ -111,6 +111,7 @@ public class CommandHandler implements CommandExecutor {
 			return CommandResult.empty();
 		Player p = (Player) src;
 		Resident r = ResidentManager.getResident(p.getUniqueId());
+		TaskManager t = TaskManager.getInstance();
 		switch ((String) args.getOne("mode").get()) {
 			case "reload": {
 				if (p.hasPermission("dom.reload")) {
@@ -121,19 +122,15 @@ public class CommandHandler implements CommandExecutor {
 	     		return CommandResult.success();
 			}
 		case "accept": {
-			if (CitizenshipRequestManager.hasRequest(r))
-				try {
-					CitizenshipRequestManager.requestAccepted(r);
-				} catch (IOException e) {
-					p.sendMessage(Utility.errorMessage("Cound not give bonus plots. Contact an administrator"));
-				}
+			if (t.hasTask(r))
+				t.signalTask(r, TaskSignal.SUCCESS);
 			else
 				p.sendMessage((Utility.pluginMessage("No invitation to accept")));
 			return CommandResult.success();
 		}
 		case "deny": {
-			if (CitizenshipRequestManager.hasRequest(r))
-				CitizenshipRequestManager.requestDenied(r);
+			if (t.hasTask(r))
+				t.signalTask(r, TaskSignal.CANCEL);
 			else
 				p.sendMessage((Utility.pluginMessage("No invitation to deny")));
 			return CommandResult.success();

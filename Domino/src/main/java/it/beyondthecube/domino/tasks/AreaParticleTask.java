@@ -32,7 +32,7 @@ public class AreaParticleTask implements Runnable {
 		ArrayList<Location<World>> blocks = a.getBorderBlocks();
 		if (ai < 10) {
 			ParticleEffect blockParticle = ParticleEffect.builder().type(ParticleTypes.DRAGON_BREATH).quantity(10)
-					.velocity(new Vector3d(0, 0, 0)).offset(new Vector3d(0.1, 0, 0.1)).build();
+					.velocity(new Vector3d(0, 0, 0)).offset(new Vector3d(0.5, 0.5, 0.5)).build();
 			for (Location<World> l : blocks) {
 				p.spawnParticles(blockParticle, l.getPosition());
 			}

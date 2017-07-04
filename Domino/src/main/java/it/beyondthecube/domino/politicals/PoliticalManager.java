@@ -12,8 +12,8 @@ import org.spongepowered.api.world.World;
 
 import it.beyondthecube.domino.Utility;
 import it.beyondthecube.domino.data.EconomyLinker;
+import it.beyondthecube.domino.data.config.ConfigManager;
 import it.beyondthecube.domino.data.database.DatabaseManager;
-import it.beyondthecube.domino.exceptions.CityNotFoundException;
 import it.beyondthecube.domino.exceptions.DatabaseException;
 import it.beyondthecube.domino.exceptions.InsufficientRankException;
 import it.beyondthecube.domino.exceptions.ParseException;
@@ -37,22 +37,17 @@ public class PoliticalManager {
 
 	public static void createCity(Player p, String name, Resident mayor, Nation n, boolean iscapital, Location<World> spawn,
 			double tax) throws DatabaseException {
-		int iddb;
-		try {
-			iddb = DatabaseManager.getInstance().createCity(name, mayor, n, iscapital, spawn);
-			City c = new City(iddb, name, null, null, mayor, null, new PermissionSet(), new ComLocation(iddb,spawn), tax, new ToggleSet(), 60);
-			DatabaseManager.getInstance().addResident(mayor, c);
-			ResidentManager.setCity(mayor, c);
-			c.claim(Sponge.getServer().getPlayer(mayor.getPlayer()).get().getLocation().getExtent()
-					.getChunkAtBlock(p.getLocation().getBlockPosition()).get(), true);
-			if (!cities.containsKey(c)) {
-				cities.put(c, n);
-				search.put(name, c);
-			}
-			EconomyLinker.createCityBank(c);
-		} catch (CityNotFoundException e1) {
-			e1.printStackTrace();
+		int iddb = DatabaseManager.getInstance().createCity(name, mayor, n, iscapital, spawn);
+		City c = new City(iddb, name, null, null, mayor, null, new PermissionSet(), new ComLocation(iddb,spawn), tax, new ToggleSet(), 60);
+		DatabaseManager.getInstance().addResident(mayor, c);
+		ResidentManager.setCity(mayor, c);
+		c.claim(Sponge.getServer().getPlayer(mayor.getPlayer()).get().getLocation().getExtent()
+				.getChunkAtBlock(p.getLocation().getBlockPosition()).get(), true);
+		if (!cities.containsKey(c)) {
+			cities.put(c, n);
+			search.put(name, c);
 		}
+		EconomyLinker.createCityBank(c);
 	}
 
 	public static City loadCity(int dbid, String name, Resident mayor, Nation n, PermissionSet pset, ComLocation spawn,
@@ -159,6 +154,7 @@ public class PoliticalManager {
 	public static boolean claim(City city, Chunk chunk, Resident r) throws DatabaseException {
 		if (AreaManager.isClaimable(chunk.getLocation(chunk.getBlockMin()), r)) {
 			city.claim(chunk, false);
+			EconomyLinker.withdraw(city, ConfigManager.getConfig().getClaimPrice());
 			return true;
 		} else
 			return false;
